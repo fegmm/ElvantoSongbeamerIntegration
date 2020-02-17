@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SongbeamerSongbookIntegrator;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace ElvantoSongbeamerIntegration.Controller
     {
         #region Variables
         public Dictionary<int, string> SongNumberDict { get; private set; } = new Dictionary<int, string>();
-        public static string DICT_PATH = Path.Combine(SongSheetOpener.SONGS_PATH, "CcliDictionary.jstxt");
+        public static string DICT_PATH = Path.Combine(Settings.Instance.SONGS_PATH, "CcliDictionary.jstxt");
         #endregion
 
 
@@ -85,8 +86,8 @@ namespace ElvantoSongbeamerIntegration.Controller
         {
             // Alle Songs einlesen und mit SongTitel -> Full Path speichern
             // Alle Song-Dateien unter "Songbeamer/Lieder" durchgehen, nur .sng-Dateien anschauen - Folien für Vorlagen - Ordner ausschließen
-            var files = Directory.GetFiles(SongSheetOpener.SONGS_PATH, "*.sng", SearchOption.AllDirectories)
-                                 .Where(x => !x.StartsWith(SongSheetOpener.SONGS_PATH + "\\Folien für Vorlagen")).ToList();
+            var files = Directory.GetFiles(Settings.Instance.SONGS_PATH, "*.sng", SearchOption.AllDirectories)
+                                 .Where(x => !x.StartsWith($"{Settings.Instance.SONGS_PATH}\\{Settings.Instance.TEMPLATE_FILES_FOLDER}")).ToList();
 
             var duplicateList = new List<string>();
             foreach (var path in files)

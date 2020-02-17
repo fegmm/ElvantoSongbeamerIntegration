@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SongbeamerSongbookIntegrator;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,12 +8,6 @@ namespace ElvantoSongbeamerIntegration.Controller
 {
     class SongSheetOpener
     {
-        public static string SONGS_PATH = @"C:\Nextcloud\Medientechnik\SongBeamer\Lieder";
-        public static string SERVICES_PATH = @"C:\Nextcloud\Medientechnik\SongBeamer\Abläufe";
-        public static string SERVICES_PATH_YOUTH = @"C:\Nextcloud\Medientechnik\SongBeamer\Abläufe\_Jugend";
-
-        private const string ELVANTO_URL = "https://fegmm.elvanto.eu";
-        private const string SONGS_PART_URL = "/songs/";
         private string SongbookE21Path;
 
         private Dictionary<string, string> SongUrlExceptions = new Dictionary<string, string>();
@@ -73,7 +68,7 @@ namespace ElvantoSongbeamerIntegration.Controller
 
                 // Falls eine URL nicht passt, andere nehmen  -> TODO URL testen
 
-                url = ELVANTO_URL + SONGS_PART_URL + songUrlBracketsRemoved;
+                url = Settings.Instance.ELVANTO_URL + Settings.Instance.SONGS_PART_URL + songUrlBracketsRemoved;
             }
             System.Diagnostics.Process.Start(url);
 
@@ -197,7 +192,8 @@ namespace ElvantoSongbeamerIntegration.Controller
         {
             // Alle Songs einlesen und mit SongTitel -> Full Path speichern
             // Alle Song-Dateien unter "Songbeamer/Lieder" durchgehen, nur .sng-Dateien anschauen - Folien für Vorlagen - Ordner ausschließen
-            var files = Directory.GetFiles(SongSheetOpener.SONGS_PATH, "*.sng", SearchOption.AllDirectories).Where(x => !x.StartsWith(SongSheetOpener.SONGS_PATH + "\\Folien für Vorlagen")).ToList();
+            var files = Directory.GetFiles(Settings.Instance.SONGS_PATH, "*.sng", SearchOption.AllDirectories)
+                                 .Where(x => !x.StartsWith($"{Settings.Instance.SONGS_PATH}\\{Settings.Instance.TEMPLATE_FILES_FOLDER}")).ToList();
 
             var songsDict = new Dictionary<string, string>();
             var duplicateList = new List<string>();

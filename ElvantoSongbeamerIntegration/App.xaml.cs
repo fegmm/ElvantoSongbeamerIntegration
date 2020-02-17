@@ -1,7 +1,6 @@
 ﻿using ElvantoSongbeamerIntegration.Controller;
 using ElvantoSongbeamerIntegration.Model;
-using System;
-using System.Collections.Generic;
+using SongbeamerSongbookIntegrator;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -12,10 +11,6 @@ namespace ElvantoSongbeamerIntegration
     /// </summary>
     public partial class App : Application
     {
-        private const string SONG_FOLDER = @"C:\Nextcloud\Medientechnik\SongBeamer\Lieder";  //@"C:\Lieder";
-        private const string E21_SONGS_PATH = @"C:\Nextcloud\Medientechnik\SongBeamer\Scripts\E21-Liederbuch (ohne Kommata).txt";
-        private const string URL_EXCEPTIONS_PATH = @"C:\Nextcloud\Medientechnik\SongBeamer\Scripts\ElvantoURLExceptions.txt";
-
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             // Test ElvantoAPI
@@ -56,15 +51,15 @@ namespace ElvantoSongbeamerIntegration
 
         private async Task TestSongbookExtractionAsync(TaskTypes taskType, string arg = null)
         {
-            var songbookImporter = new SongbookImporter(E21_SONGS_PATH);
-            var songSheetOpener = new SongSheetOpener(E21_SONGS_PATH, URL_EXCEPTIONS_PATH);
+            var songbookImporter = new SongbookImporter(Settings.Instance.E21_SONGS_PATH);
+            var songSheetOpener = new SongSheetOpener(Settings.Instance.E21_SONGS_PATH, Settings.Instance.URL_EXCEPTIONS_PATH);
             var ccliIntegrator = new SongselectIntegrator();
             var logString = "";
 
             switch (taskType)
             {
                 case TaskTypes.importSongbooksToAllSongs:
-                    await songbookImporter.AddSonbooksToFilesInFolder(SONG_FOLDER, false, true);
+                    await songbookImporter.AddSonbooksToFilesInFolder(Settings.Instance.SONGS_PATH, false, true);
                     break;
 
                 case TaskTypes.importSongbookOneSong:
@@ -78,7 +73,7 @@ namespace ElvantoSongbeamerIntegration
                     break;
 
                 case TaskTypes.openSheetsService:
-                    logString = songSheetOpener.ParseService(arg ?? @"C:\Nextcloud\Medientechnik\SongBeamer\Abläufe\_Jugend\2020-01-10_Jugend.col", SONG_FOLDER);
+                    logString = songSheetOpener.ParseService(arg ?? @"C:\Nextcloud\Medientechnik\SongBeamer\Abläufe\_Jugend\2020-01-10_Jugend.col", Settings.Instance.SONGS_PATH);
                     MessageBox.Show(logString, "Lieder von zuletzt gespeichertem Ablauf geöffnet", MessageBoxButton.OK, MessageBoxImage.Information);
                     break;
 

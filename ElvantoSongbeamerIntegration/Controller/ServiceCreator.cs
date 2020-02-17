@@ -1,5 +1,6 @@
 ﻿using ElvantoSongbeamerIntegration.Model;
 using Microsoft.Win32;
+using SongbeamerSongbookIntegrator;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,8 +12,6 @@ namespace ElvantoSongbeamerIntegration.Controller
     public class ServiceCreator
     {
         #region Variables
-        public static string PPTS_PATH = @"C:\Nextcloud\Medientechnik\2 PPT-Liedfolien und PPT-Master";
-
         private bool              IsInitialized      = false;
         private ServiceCreatorOptions Options;
         private SongselectIntegrator ccliIntegrator = new SongselectIntegrator();
@@ -74,8 +73,8 @@ namespace ElvantoSongbeamerIntegration.Controller
 
             // Alle Songs einlesen und mit SongTitel -> Full Path speichern
             // Alle Song-Dateien unter "Songbeamer/Lieder" durchgehen, nur .sng-Dateien anschauen - Folien für Vorlagen - Ordner ausschließen
-            var files = Directory.GetFiles(initPPTsElseSngs ? PPTS_PATH : SongSheetOpener.SONGS_PATH, initPPTsElseSngs ? "*.ppt?" : "*.sng", SearchOption.AllDirectories)
-                                 .Where(x => !x.StartsWith(SongSheetOpener.SONGS_PATH + "\\Folien für Vorlagen")).ToList();
+            var files = Directory.GetFiles(initPPTsElseSngs ? Settings.Instance.PPTS_PATH : Settings.Instance.SONGS_PATH, initPPTsElseSngs ? "*.ppt?" : "*.sng", SearchOption.AllDirectories)
+                                 .Where(x => !x.StartsWith($"{Settings.Instance.SONGS_PATH}\\{Settings.Instance.TEMPLATE_FILES_FOLDER}")).ToList();
 
             foreach (var path in files)
             {
@@ -137,7 +136,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         private string SaveServicePlanToFile()
         {
             // Dateipfad bestimmen und prüfen, ob Datei bereits existiert
-            var filepath = Options.IsForYouth ? $"{SongSheetOpener.SERVICES_PATH_YOUTH}\\{GetNextFriday()}_Jugend.col" : GetSavePathFromFileDialog();
+            var filepath = Options.IsForYouth ? $"{Settings.Instance.SERVICES_YOUTH_PATH}\\{GetNextFriday()}_Jugend.col" : GetSavePathFromFileDialog();
             if (File.Exists(filepath))
             {
                 if (MessageBox.Show("Ablauf-Datei ist schon vorhanden. Überschreiben?", "Datei ersetzen?", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
@@ -194,8 +193,8 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (!Options.IsForYouth)
             {
                 var diashow = new ServiceItem("Vor dem Gottesdienst anzeigen!", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
 
                 text += diashow.ToString();
             }
@@ -219,19 +218,19 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (!Options.IsForYouth)
             {
                 var diashow = new ServiceItem("Outro, falls KEIN Bistro", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt2.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 3", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt1.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 4", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt3.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.PICTURES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.PICTURES_PATH}\\I_punkt3.png", ServiceItemType.Image));
 
                 text += diashow.ToString();
 
                 var diashow2 = new ServiceItem("Outro, falls Bistro", null, ServiceItemType.Diashow);
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 1", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt2.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 2", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 3", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt1.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 4", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\FEGMM-Beamerfolie-M12-Bistro-Abends.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 5", @"C:\Nextcloud\Medientechnik\SongBeamer\Bilder\I_punkt3.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.PICTURES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-M12-Bistro-Abends.jpg", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.PICTURES_PATH}\\I_punkt3.png", ServiceItemType.Image));
 
                 text += diashow2.ToString();
 
@@ -244,6 +243,9 @@ namespace ElvantoSongbeamerIntegration.Controller
 
             return text;
         }
+        #endregion
+
+        #region Create Service Templates
         #endregion
 
         #region SongExtraction
@@ -481,7 +483,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         #region Helper
         private string GetYouthScheduleImagePath()
         {
-            var images = Directory.GetFiles(SongSheetOpener.SERVICES_PATH_YOUTH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList().Where(x => x.ToLower().Contains("programm"));
+            var images = Directory.GetFiles(Settings.Instance.SERVICES_YOUTH_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList().Where(x => x.ToLower().Contains("programm"));
 
             if (images.Count() == 1) { return images.First(); }
             else if (images.Count() > 1)
@@ -513,7 +515,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         private string GetSavePathFromFileDialog()
         {
             var saveFileDialog = new SaveFileDialog();
-            saveFileDialog.InitialDirectory = SongSheetOpener.SERVICES_PATH;
+            saveFileDialog.InitialDirectory = Settings.Instance.SERVICES_PATH;
             saveFileDialog.Title = "Ablauf speichern unter";
             saveFileDialog.CheckFileExists = false;
             saveFileDialog.CheckPathExists = true;
@@ -539,20 +541,20 @@ namespace ElvantoSongbeamerIntegration.Controller
                 return $"..\\..\\{folder}\\{SongSheetOpener.UmlautsUTF8ToUnicode(path.Remove(0, PPTS_PATH.Length).Substring(1))}";*/
             }
 
-            return SongSheetOpener.UmlautsUTF8ToUnicode(path.Remove(0, SongSheetOpener.SONGS_PATH.Length).Substring(1));
+            return SongSheetOpener.UmlautsUTF8ToUnicode(path.Remove(0, Settings.Instance.SONGS_PATH.Length).Substring(1));
         }
 
         private string GetFilepathProperFormat(string path)
         {
-            if (!path.StartsWith(SongSheetOpener.SONGS_PATH))
+            if (!path.StartsWith(Settings.Instance.SONGS_PATH))
             {
                 // Pfad wird immer Relativ zum Lieder-Ordner erstellt:
                 var index = 0;
-                for (; index < Math.Min(path.Length, SongSheetOpener.SONGS_PATH.Length); index++)
+                for (; index < Math.Min(path.Length, Settings.Instance.SONGS_PATH.Length); index++)
                 {
-                    if (path[index] != SongSheetOpener.SONGS_PATH[index]) { break; }
+                    if (path[index] != Settings.Instance.SONGS_PATH[index]) { break; }
                 }
-                var shortened = SongSheetOpener.SONGS_PATH.Substring(index);
+                var shortened = Settings.Instance.SONGS_PATH.Substring(index);
                 var difference = shortened.Count(x => x == '\\') + 1; // Lieder Ordner ist ja nicht enthalten
 
                 var pathPrefix = "";
@@ -565,7 +567,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             }
             else
             {
-                return SongSheetOpener.UmlautsUTF8ToUnicode(path.Remove(0, SongSheetOpener.SONGS_PATH.Length).Substring(1));
+                return SongSheetOpener.UmlautsUTF8ToUnicode(path.Remove(0, Settings.Instance.SONGS_PATH.Length).Substring(1));
             }
         }
         #endregion
