@@ -19,6 +19,7 @@ namespace SongbeamerSongbookIntegrator
 
         public string E21_SONGS_PATH;
         public string URL_EXCEPTIONS_PATH;
+        public string CCLI_DICT_PATH;
 
         public readonly string ELVANTO_URL = "https://fegmm.elvanto.eu";
         public readonly string SONGS_PART_URL = "/songs/";       
@@ -27,6 +28,7 @@ namespace SongbeamerSongbookIntegrator
         {
             E21_SONGS_PATH = $"{SCRIPTS_PATH}\\E21-Liederbuch (ohne Kommata).txt";
             URL_EXCEPTIONS_PATH = $"{SCRIPTS_PATH}\\ElvantoURLExceptions.txt";
+            CCLI_DICT_PATH = $"{SONGS_PATH}\\CcliDictionary.jstxt";
         }
 
         public static Settings Instance  {  get {  return instance;  } }

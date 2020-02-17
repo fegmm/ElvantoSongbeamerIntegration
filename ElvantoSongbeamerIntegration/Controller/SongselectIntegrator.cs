@@ -11,16 +11,15 @@ namespace ElvantoSongbeamerIntegration.Controller
     {
         #region Variables
         public Dictionary<int, string> SongNumberDict { get; private set; } = new Dictionary<int, string>();
-        public static string DICT_PATH = Path.Combine(Settings.Instance.SONGS_PATH, "CcliDictionary.jstxt");
         #endregion
 
 
         public bool UpdateCCLIDictionary(bool force)
         {
             // Falls schon eine Datei existiert, diese nur aktualisieren, wenn sie älter als 2 Wochen ist.
-            if (!force && File.Exists(DICT_PATH))
+            if (!force && File.Exists(Settings.Instance.CCLI_DICT_PATH))
             {
-                if (DateTime.Now.Subtract(File.GetLastWriteTime(DICT_PATH)) < TimeSpan.FromDays(14)) { return LoadCCLIDictionary(); }
+                if (DateTime.Now.Subtract(File.GetLastWriteTime(Settings.Instance.CCLI_DICT_PATH)) < TimeSpan.FromDays(14)) { return LoadCCLIDictionary(); }
             }
 
             InitCCLIDictionary(false);
@@ -31,9 +30,9 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         public bool LoadCCLIDictionary()
         {
-            if (!File.Exists(DICT_PATH)) { return false; }
+            if (!File.Exists(Settings.Instance.CCLI_DICT_PATH)) { return false; }
 
-            var sr = File.OpenText(DICT_PATH);
+            var sr = File.OpenText(Settings.Instance.CCLI_DICT_PATH);
             if (sr == null) { return false; }
 
             // Splitten nach #
@@ -62,7 +61,7 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         public bool SaveCCLIDictionary()
         {
-            var sw = new StreamWriter(DICT_PATH, false, System.Text.Encoding.UTF8);
+            var sw = new StreamWriter(Settings.Instance.CCLI_DICT_PATH, false, System.Text.Encoding.UTF8);
 
             if (sw == null) { return false; }
 
