@@ -1,6 +1,6 @@
 ﻿namespace ElvantoSongbeamerIntegration.Model
 {
-    enum TaskTypes
+    enum TaskType
     {
         importSongbooksToAllSongs,
         importSongbookOneSong,
@@ -9,6 +9,7 @@
         importSongbookAndOpenService,
         importSongbookAndOpenSong,
         findDuplicateSongs,
-        findDuplicateCCLIs
+        findDuplicateCCLIs,
+        updateServiceTemplates
     }
 }

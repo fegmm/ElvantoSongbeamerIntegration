@@ -63,6 +63,7 @@
     <Compile Include="Model\ServiceCreatorOptions.cs" />
     <Compile Include="Model\ServiceItem.cs" />
     <Compile Include="Model\ServiceItemType.cs" />
+    <Compile Include="Model\ServiceTemplateType.cs" />
     <Compile Include="Model\TaskTypes.cs" />
     <Compile Include="Settings.cs" />
     <Page Include="MainWindow.xaml">

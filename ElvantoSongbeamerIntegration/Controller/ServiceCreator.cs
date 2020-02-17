@@ -1,6 +1,7 @@
 ﻿using ElvantoSongbeamerIntegration.Model;
 using Microsoft.Win32;
 using SongbeamerSongbookIntegrator;
+using SongbeamerSongbookIntegrator.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -161,9 +162,9 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (string.IsNullOrEmpty(filepath)) { ErrorLabel = "Speichern durch Benutzer abgebrochen."; return ""; }
 
             // Inhalt erstellen und abspeichern
-            var content = CreateServicePlan();
+            var content = BuildServicePlan();
 
-            var sw = new StreamWriter(filepath);
+            var sw = new StreamWriter(filepath, false, System.Text.Encoding.UTF8);
             if (sw == null) return "";
             sw.Write(content);
             sw.Flush();
@@ -174,7 +175,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             return filepath;
         }
 
-        private string CreateServicePlan()
+        private string BuildServicePlan()
         {
             // Fehler prüfen
             if (ServiceItems.Count < 1) { ErrorLabel = "Fehler: Es wurde kein Song gefunden."; return ""; }
@@ -193,8 +194,8 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (!Options.IsForYouth)
             {
                 var diashow = new ServiceItem("Vor dem Gottesdienst anzeigen!", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
 
                 text += diashow.ToString();
             }
@@ -218,19 +219,19 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (!Options.IsForYouth)
             {
                 var diashow = new ServiceItem("Outro, falls KEIN Bistro", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\I_punkt2.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.PICTURES_PATH}\\I_punkt1.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.PICTURES_PATH}\\I_punkt3.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashow.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
 
                 text += diashow.ToString();
 
                 var diashow2 = new ServiceItem("Outro, falls Bistro", null, ServiceItemType.Diashow);
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.PICTURES_PATH}\\I_punkt2.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.PICTURES_PATH}\\I_punkt1.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.PICTURES_PATH}\\FEGMM-Beamerfolie-M12-Bistro-Abends.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.PICTURES_PATH}\\I_punkt3.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-M12-Bistro-Abends.jpg", ServiceItemType.Image));
+                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
 
                 text += diashow2.ToString();
 
@@ -246,6 +247,138 @@ namespace ElvantoSongbeamerIntegration.Controller
         #endregion
 
         #region Create Service Templates
+        // Achtung: Nutzer, der das Programm ausführt, braucht entsprechende Rechte in der Nextcloud, um die Vorlagen überschreiben zu können.
+        public bool UpdateServiceTemplates()
+        {
+            // Inhalt erstellen und abspeichern
+            for (var type = ServiceTemplateType.MorningService; type <= ServiceTemplateType.EveningService; type++)
+            {
+                var content = BuildServiceTemplate(type);
+
+                var sw = new StreamWriter(Settings.Instance.SERVICES_TEMPLATES_PATH + "\\" + ServiceTemplateItemData.GetAttr(type).Filename, false, System.Text.Encoding.UTF8);
+                if (sw == null) { return false; }
+                sw.Write(content);
+                sw.Flush();
+
+                // Close File
+                sw.Close();
+            }
+          
+            return true;
+        }
+
+        // Achtung: Das ServiceTemplateType.Youth wird hier nicht unterstützt bislang!
+        private string BuildServiceTemplate(ServiceTemplateType type)
+        {
+            ServiceItems.Clear();
+
+            // Ablauf-Datei eröffnen
+            var text = "object AblaufPlanItems: TAblaufPlanItems" + ServiceItem.NewLine + "  items = <" + ServiceItem.NewLine;
+
+            // Notiz: Läuft Klimakammer?
+            if (Settings.Instance.ADD_KLIMAKAMMER_NOTES) { ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("-> Läuft Klimakammer?"), null, ServiceItemType.Note2)); }
+
+            // Diashow - Vor dem Gottesdienst
+            var diashowBeginning = new ServiceItem("Diashow vor Gottesdienst anzeigen", null, ServiceItemType.Diashow);
+            diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
+            if (type != ServiceTemplateType.MiddayService) { diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image)); }
+            else { AddTempDiashowImages(ref diashowBeginning); }
+            
+            ServiceItems.Add(diashowBeginning);
+
+
+            // Liederbücher bei Morgengodi
+            if (type == ServiceTemplateType.MorningService) {
+                ServiceItems.Add(new ServiceItem("Liederbuch 1", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
+            }
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Ansagen ---"), null, ServiceItemType.Note));
+
+            if (type == ServiceTemplateType.MorningService)
+            {
+                ServiceItems.Add(new ServiceItem("Liederbuch 2", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 2.sng"), ServiceItemType.Song));
+                ServiceItems.Add(new ServiceItem("Liederbuch 3", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 3.sng"), ServiceItemType.Song));
+                ServiceItems.Add(new ServiceItem("Liederbuch 4", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 4.sng"), ServiceItemType.Song));
+            }
+
+            // Textlesung, Predigt und Gebetsanliegen
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Bibel-Textlesung_" + ServiceTemplateItemData.GetAttr(type).Abbreviation), 
+                                             SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Bibel-Textlesung_{ServiceTemplateItemData.GetAttr(type).Abbreviation}.sng"), ServiceItemType.Song));
+             
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Predigt ---"), null, ServiceItemType.Note));
+
+            if (type == ServiceTemplateType.MorningService)
+            {
+                ServiceItems.Add(new ServiceItem("Liederbuch 5", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
+            }
+
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Gebetsanliegen"), SongSheetOpener.UmlautsUTF8ToUnicode(Settings.Instance.PRAYER_POINTS_PPT_PATH), ServiceItemType.PPT));
+
+            if (type == ServiceTemplateType.MorningService)
+            {
+                ServiceItems.Add(new ServiceItem("Liederbuch 6", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
+            }
+
+            // 2 Diashows ans Gottesdienst-Ende und Klimakammer-Notiz
+            if (type == ServiceTemplateType.EveningService)
+            {
+                var diashowEnd1 = new ServiceItem("Outro, falls KEIN Bistro", null, ServiceItemType.Diashow);
+                diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
+                AddTempDiashowImages(ref diashowEnd1);
+
+                ServiceItems.Add(diashowEnd1);
+            }
+
+            if (type != ServiceTemplateType.MiddayService)
+            {
+                var diashowEnd2 = new ServiceItem(type == ServiceTemplateType.EveningService ? "Outro, falls Bistro" : "Diashow nach Gottesdienst anzeigen", null, ServiceItemType.Diashow);
+                var imageSnackFilename = type == ServiceTemplateType.MorningService ? "FEGMM-Beamerfolie-M12-Bistro-Morgens.jpg" : "FEGMM-Beamerfolie-M12-Bistro-Abends.jpg";
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\{imageSnackFilename}", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
+                AddTempDiashowImages(ref diashowEnd2);
+
+                ServiceItems.Add(diashowEnd2);
+            }
+
+            if (Settings.Instance.ADD_KLIMAKAMMER_NOTES && type == ServiceTemplateType.EveningService) { ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("-> Klimakammer ausgeschaltet?"), null, ServiceItemType.Note2)); }
+
+            // Alle Elemente hintereinander anfügen in Datei
+            foreach (var item in ServiceItems)
+            {
+                text += item.ToString();
+            }
+
+            text = text.Remove(text.Length - ServiceItem.NewLine.Length, ServiceItem.NewLine.Length);
+            text += ">" + ServiceItem.NewLine + "end" + ServiceItem.NewLine;
+
+            return text;
+        }
+
+        private bool AddTempDiashowImages(ref ServiceItem diashow)
+        {
+            var images = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList();
+            var pngImages = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.png", SearchOption.TopDirectoryOnly).ToList();
+            images.AddRange(pngImages);
+
+            // Neueres nehmen
+            var count = 1;
+            foreach (var image in images)
+            {
+                var split = Path.GetFileName(image).Split('_');
+                var date = DateTime.Today;
+                if (split.Count() > 1) { if (!DateTime.TryParse(split[0], out date)) { date = DateTime.Today; } }
+                if (DateTime.Today.Subtract(date).Days <= 0) {
+                    diashow.AddSubItemForDiashow(new ServiceItem($"Einladung {count}", SongSheetOpener.UmlautsUTF8ToUnicode(image), ServiceItemType.Image)); count++;
+                }
+            }
+
+            return true;
+        }
         #endregion
 
         #region SongExtraction

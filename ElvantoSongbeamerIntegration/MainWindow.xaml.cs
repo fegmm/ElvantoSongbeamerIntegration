@@ -3,6 +3,7 @@ using ElvantoSongbeamerIntegration.Controller;
 using System.Windows;
 using System.Windows.Media;
 using ElvantoSongbeamerIntegration.Model;
+using SongbeamerSongbookIntegrator;
 
 namespace ElvantoSongbeamerIntegration
 {
@@ -75,7 +76,7 @@ namespace ElvantoSongbeamerIntegration
             var openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = true;
             openFileDialog.Filter = "Alle Medien-Dateien|*.pdf;*.wmv;*.mov;*.mp4;*.jpg;*.jpeg;*.png;*.mp3;*.wav|PDF-Dateien (*.pdf)|*.pdf|Bilder (*.jpg, *.png)|*.jpg;*.jpeg;*.png|Audio-Dateien (*.mp3, *.wav)|*.mp3;*.wav|Videos (*.wmv, *.mov, *mp4)|*.wmv;*.mov;*.mp4";
-            openFileDialog.InitialDirectory = optionForYouth.IsChecked == true ? SongSheetOpener.SERVICES_PATH_YOUTH : SongSheetOpener.SERVICES_PATH;
+            openFileDialog.InitialDirectory = optionForYouth.IsChecked == true ? Settings.Instance.SERVICES_YOUTH_PATH : Settings.Instance.SERVICES_PATH;
             if (openFileDialog.ShowDialog() == true)
             {
                 foreach (var path in openFileDialog.FileNames)
