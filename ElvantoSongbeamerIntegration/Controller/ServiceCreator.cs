@@ -137,7 +137,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         private string SaveServicePlanToFile()
         {
             // Dateipfad bestimmen und prüfen, ob Datei bereits existiert
-            var filepath = Options.IsForYouth ? $"{Settings.Instance.SERVICES_YOUTH_PATH}\\{GetNextFriday()}_Jugend.col" : GetSavePathFromFileDialog();
+            var filepath = Options.IsForYouth ? $"{Settings.Instance.SERVICES_YOUTH_PATH}\\{GetNextFridayAsString()}_Jugend.col" : GetSavePathFromFileDialog();
             if (File.Exists(filepath))
             {
                 if (MessageBox.Show("Ablauf-Datei ist schon vorhanden. Überschreiben?", "Datei ersetzen?", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
@@ -282,7 +282,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             var diashowBeginning = new ServiceItem("Diashow vor Gottesdienst anzeigen", null, ServiceItemType.Diashow);
             diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
             if (type != ServiceTemplateType.MiddayService) { diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image)); }
-            else { AddTempDiashowImages(ref diashowBeginning); }
+            else { AddTempDiashowImages(ref diashowBeginning, type); }
             
             ServiceItems.Add(diashowBeginning);
 
@@ -326,7 +326,7 @@ namespace ElvantoSongbeamerIntegration.Controller
                 diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
                 diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
                 diashowEnd1.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
-                AddTempDiashowImages(ref diashowEnd1);
+                AddTempDiashowImages(ref diashowEnd1, type);
 
                 ServiceItems.Add(diashowEnd1);
             }
@@ -340,7 +340,7 @@ namespace ElvantoSongbeamerIntegration.Controller
                 diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
                 diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\{imageSnackFilename}", ServiceItemType.Image));
                 diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
-                AddTempDiashowImages(ref diashowEnd2);
+                AddTempDiashowImages(ref diashowEnd2, type);
 
                 ServiceItems.Add(diashowEnd2);
             }
@@ -359,21 +359,52 @@ namespace ElvantoSongbeamerIntegration.Controller
             return text;
         }
 
-        private bool AddTempDiashowImages(ref ServiceItem diashow)
+        private bool IsServiceInSelection(string serviceSelector, ServiceTemplateType type)
+        {
+            var serviceSelection = serviceSelector.ToLower();
+
+            var hasMorning = serviceSelection.Contains(ServiceTemplateItemData.GetAttr(ServiceTemplateType.MorningService).Selector);
+            var hasMidday = serviceSelection.Contains(ServiceTemplateItemData.GetAttr(ServiceTemplateType.MiddayService).Selector);
+            var hasEvening = serviceSelection.Contains(ServiceTemplateItemData.GetAttr(ServiceTemplateType.EveningService).Selector);
+
+            // Wenn überhaupt kein Gottesdienst angegeben wurde, ist der Underscore vermutlich einfach Teil des Dateinamens
+            if (hasMorning || hasMidday || hasEvening)
+            {
+                if ((type == ServiceTemplateType.MorningService && !hasMorning) ||
+                    (type == ServiceTemplateType.MiddayService && !hasMidday) ||
+                    (type == ServiceTemplateType.EveningService && !hasEvening))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool AddTempDiashowImages(ref ServiceItem diashow, ServiceTemplateType type)
         {
             var images = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList();
             var pngImages = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.png", SearchOption.TopDirectoryOnly).ToList();
             images.AddRange(pngImages);
 
-            // Neueres nehmen
+            // Format:   Enddatum_[Godi(s)]_Bild.jpg/.png
+            // Vergleiche Enddatum immer mit dem des nächsten Sonntages 
             var count = 1;
             foreach (var image in images)
             {
-                var split = Path.GetFileName(image).Split('_');
-                var date = DateTime.Today;
-                if (split.Count() > 1) { if (!DateTime.TryParse(split[0], out date)) { date = DateTime.Today; } }
-                if (DateTime.Today.Subtract(date).Days <= 0) {
-                    diashow.AddSubItemForDiashow(new ServiceItem($"Einladung {count}", SongSheetOpener.UmlautsUTF8ToUnicode(image), ServiceItemType.Image)); count++;
+                var filenameSegments = Path.GetFileName(image).Split('_');
+                var endDate = DateTime.Today;
+                if (filenameSegments.Count() > 1) { if (!DateTime.TryParse(filenameSegments[0], out endDate)) { endDate = DateTime.Today; } }
+
+                // Enthält der Dateiname eine Gottesdienst-Einschränkung?
+                if (filenameSegments.Count() > 2 && !IsServiceInSelection(filenameSegments[1], type))
+                {
+                    continue;
+                }
+
+                // Bild hinzufügen, wenn das Enddatum vor dem nächsten / heutigen Sonntag liegt
+                if (GetNextSunday().Subtract(endDate).Days <= 0) {
+                    diashow.AddSubItemForDiashow(new ServiceItem($"Event {count}", SongSheetOpener.UmlautsUTF8ToUnicode(image), ServiceItemType.Image)); count++;
                 }
             }
 
@@ -636,13 +667,22 @@ namespace ElvantoSongbeamerIntegration.Controller
             return null;
         }
 
-        private string GetNextFriday()
+        private string GetNextFridayAsString()
         {
-            var today = DateTime.Now;
+            var today = DateTime.Today;
 
             var nextFriday = today.Add(TimeSpan.FromDays(today.DayOfWeek == DayOfWeek.Saturday ? 6 : (int)DayOfWeek.Friday - ((int)today.DayOfWeek)));
 
             return nextFriday.ToString("yyyy-MM-dd");
+        }
+
+        private DateTime GetNextSunday()
+        {
+            var today = DateTime.Today;
+
+            var nextSunday = today.DayOfWeek == DayOfWeek.Sunday ? today : today.Add(TimeSpan.FromDays( 7 - (int)today.DayOfWeek ));
+
+            return nextSunday;
         }
 
         private string GetSavePathFromFileDialog()
