@@ -1,4 +1,5 @@
-﻿using ElvantoSongbeamerIntegration.Controller;
+﻿using ElvantoApi.Models;
+using ElvantoSongbeamerIntegration.Controller;
 using ElvantoSongbeamerIntegration.Model;
 using SongbeamerSongbookIntegrator;
 using System.Threading.Tasks;
@@ -13,11 +14,7 @@ namespace ElvantoSongbeamerIntegration
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            // Test ElvantoAPI
-            //var elvantoClient = new ElvantoApi.Client("JcBNUpCE9Acygs95SnC4kgbryqPmurCZ");
-
-            //var result = elvantoClient.ServicesGetAllAsync();
-
+            TestElvantoAPI().Wait();
 
             // Wenn genau 1 Argument übergeben wurde, gewünschte Aktion ausführen und dann Programm ohne GUI beenden
             if (e.Args.Length == 1)
@@ -51,6 +48,15 @@ namespace ElvantoSongbeamerIntegration
             // Sonst GUI zum Zusammenstellen eines Ablaufs aus Liedern anzeigen (MainWindow.xaml)  -> Properties -> Debug -> Befehlszeilenargumente
             MainWindow mainWindow = new MainWindow();
             mainWindow.Show();
+        }
+
+        private async Task TestElvantoAPI()
+        {
+            // Test ElvantoAPI
+            var elvantoClient = new ElvantoApi.Client("JcBNUpCE9Acygs95SnC4kgbryqPmurCZ");
+
+            var result = await elvantoClient.PeopleGetAllAsync(new GetAllPeopleRequest() );
+            //elvantoClient.
         }
 
         private async Task TestSongbookExtractionAsync(TaskType taskType, string arg = null)
