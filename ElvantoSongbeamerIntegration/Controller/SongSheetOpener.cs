@@ -170,6 +170,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             var serviceFolder = Path.Combine(songsFolder, "Abläufe");
 
             // Abläufe öffnen
+            if (!Directory.Exists(serviceFolder)) { return ""; }
             var files = Directory.GetFiles(serviceFolder, "*.col", SearchOption.AllDirectories).ToList();
 
             // Open File to write
@@ -190,13 +191,15 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         public List<string> FindSongDuplicates()
         {
+            var duplicateList = new List<string>();
+            if (!Directory.Exists(Settings.Instance.SONGS_PATH)) { return duplicateList; }
+
             // Alle Songs einlesen und mit SongTitel -> Full Path speichern
             // Alle Song-Dateien unter "Songbeamer/Lieder" durchgehen, nur .sng-Dateien anschauen - Folien für Vorlagen - Ordner ausschließen
             var files = Directory.GetFiles(Settings.Instance.SONGS_PATH, "*.sng", SearchOption.AllDirectories)
                                  .Where(x => !x.StartsWith($"{Settings.Instance.SONGS_PATH}\\{Settings.Instance.TEMPLATE_FILES_FOLDER}")).ToList();
 
             var songsDict = new Dictionary<string, string>();
-            var duplicateList = new List<string>();
             foreach (var path in files)
             {
                 try

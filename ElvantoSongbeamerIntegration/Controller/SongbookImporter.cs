@@ -25,6 +25,8 @@ namespace ElvantoSongbeamerIntegration.Controller
         #region Mehrere Dateien
         public async Task<bool> AddSonbooksToFilesInFolder(string folder, bool onlyAddIfNotSet, bool scanSubdirectories = true)
         {
+            if (!Directory.Exists(folder)) { return false; }
+
             // Folien für Vorlagen - Ordner ausschließen, nur .sng-Dateien bearbeiten
             var files = Directory.GetFiles(folder, "*.sng", scanSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).ToList().Where(x => !x.StartsWith(folder + "\\Folien"));
 

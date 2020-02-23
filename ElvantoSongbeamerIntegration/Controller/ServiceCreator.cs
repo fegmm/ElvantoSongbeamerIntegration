@@ -73,9 +73,12 @@ namespace ElvantoSongbeamerIntegration.Controller
         {
             if ((initPPTsElseSngs && PPTDict.Any()) || (!initPPTsElseSngs && SongsDict.Any())) { return; }
 
+            var directoryPath = initPPTsElseSngs ? Settings.Instance.PPTS_PATH : Settings.Instance.SONGS_PATH;
+            if (!Directory.Exists(directoryPath)) { return; }
+
             // Alle Songs einlesen und mit SongTitel -> Full Path speichern
             // Alle Song-Dateien unter "Songbeamer/Lieder" durchgehen, nur .sng-Dateien anschauen - Folien für Vorlagen - Ordner ausschließen
-            var files = Directory.GetFiles(initPPTsElseSngs ? Settings.Instance.PPTS_PATH : Settings.Instance.SONGS_PATH, initPPTsElseSngs ? "*.ppt?" : "*.sng", SearchOption.AllDirectories)
+            var files = Directory.GetFiles(directoryPath, initPPTsElseSngs ? "*.ppt?" : "*.sng", SearchOption.AllDirectories)
                                  .Where(x => !x.StartsWith($"{Settings.Instance.SONGS_PATH}\\{Settings.Instance.TEMPLATE_FILES_FOLDER}")).ToList();
 
             foreach (var path in files)
@@ -390,6 +393,8 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         private bool AddTempDiashowImages(ref ServiceItem diashow, ServiceTemplateType type)
         {
+            if (!Directory.Exists(Settings.Instance.DIASHOW_IMAGES_PATH)) { return false; }
+
             var images = Directory.GetFiles(Settings.Instance.DIASHOW_IMAGES_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList();
             var pngImages = Directory.GetFiles(Settings.Instance.DIASHOW_IMAGES_PATH, "*.png", SearchOption.TopDirectoryOnly).ToList();
             images.AddRange(pngImages);
@@ -420,6 +425,8 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         private bool AddAnnouncementsToMediaItems(ServiceTemplateType templateType)
         {
+            if (!Directory.Exists(Settings.Instance.ANNOUNCEMENTS_PATH)) { return false; }
+
             var mediaFiles = Directory.GetFiles(Settings.Instance.ANNOUNCEMENTS_PATH, "*.*", SearchOption.TopDirectoryOnly)
                                   .Where(x => Settings.Instance.ALLOWED_MEDIA_EXTENSIONS.Contains(Path.GetExtension(x))).ToList();
 
@@ -451,13 +458,20 @@ namespace ElvantoSongbeamerIntegration.Controller
         // Hier ist die meiste "Magie" drin
         private bool ExtractServiceItems()
         {
-            // Zeilenweise durchgehen, leere Zeilen absichtlich behalten, um bei einem Abbruch alles bis zum aktuellen Lied gelöscht zu haben.
+              // Zeilenweise durchgehen, leere Zeilen absichtlich behalten, um bei einem Abbruch alles bis zum aktuellen Lied gelöscht zu haben.
             string[] separator = { "\r\n" };
             var newLineLength = 2;
             var songList = SongsInput.Split(separator, StringSplitOptions.None).ToList();
 
-            // Falscher Separator?
-            if (songList.Count == 1) { songList = SongsInput.Split('\n').ToList(); newLineLength = 1; }
+            // Ist Zeilenumbruch gemischt mit LF und CRLF (\r\n) oder nur LF (\n)?
+            var hasLF = SongsInput.Contains('\r');
+            var hasCRLF = songList.Where(x => x.Contains('\n')).Any();
+            if (hasCRLF && hasLF)
+            {
+                SongsInput = SongsInput.Replace("\r", "").Replace("\n", "\r\n");
+                songList = SongsInput.Split(separator, StringSplitOptions.None).ToList();
+            }
+            else if (hasLF && !hasCRLF && songList.Count == 1) { songList = SongsInput.Split('\n').ToList(); newLineLength = 1; }
 
             // Zeilen analysieren: Häufige Pattern finden, die auf Extrainfos hindeuten
             var validLines = songList.Where(x => x.Trim().Length > 2).Count();
@@ -682,6 +696,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         #region Helper
         private string GetYouthScheduleImagePath()
         {
+            if (!Directory.Exists(Settings.Instance.SERVICES_YOUTH_PATH)) { return null; }
             var images = Directory.GetFiles(Settings.Instance.SERVICES_YOUTH_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList().Where(x => x.ToLower().Contains("programm"));
 
             if (images.Count() == 1) { return images.First(); }
