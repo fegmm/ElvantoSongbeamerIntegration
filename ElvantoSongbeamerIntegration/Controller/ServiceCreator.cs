@@ -58,14 +58,15 @@ namespace ElvantoSongbeamerIntegration.Controller
         {
             var extension = Path.GetExtension(path);
             var relativePath = GetFilepathProperFormat(path);
+            var itemType = ServiceItem.GetItemTypeFromExtension(extension);
 
-            if (extension == ".pdf") { MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.PDF)); }
-            else if (".jpg;.jpeg;.png".Contains(extension)) { MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.Image)); }
-            else if ("*.mp3;*.wav".Contains(extension)) { MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.Audio)); }
-            else if ("*.wmv;*.mov;*.mp4".Contains(extension)) { MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.Video)); }
-            else { return false; }
+            if (itemType.HasValue)
+            {
+                MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, itemType.Value));
+                return true;
+            }
 
-            return true;
+            return false;
         }
 
         private void InitSongDictionaries(bool initPPTsElseSngs)
@@ -271,6 +272,7 @@ namespace ElvantoSongbeamerIntegration.Controller
         private string BuildServiceTemplate(ServiceTemplateType type)
         {
             ServiceItems.Clear();
+            MediaItems.Clear();
 
             // Ablauf-Datei eröffnen
             var text = "object AblaufPlanItems: TAblaufPlanItems" + ServiceItem.NewLine + "  items = <" + ServiceItem.NewLine;
@@ -287,11 +289,14 @@ namespace ElvantoSongbeamerIntegration.Controller
             ServiceItems.Add(diashowBeginning);
 
 
-            // Liederbücher bei Morgengodi
+            // Liederbücher bei Morgengodi und Ansagen dazwischen
             if (type == ServiceTemplateType.MorningService) {
                 ServiceItems.Add(new ServiceItem("Liederbuch 1", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
             }
-            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Ansagen ---"), null, ServiceItemType.Note));
+
+            var areAnnouncements = AddAnnouncementsToMediaItems(type);
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(areAnnouncements ? "Ansagen:" : "--- Ansagen ---"), null, ServiceItemType.Note));
+            ServiceItems.AddRange(MediaItems);
 
             if (type == ServiceTemplateType.MorningService)
             {
@@ -299,6 +304,7 @@ namespace ElvantoSongbeamerIntegration.Controller
                 ServiceItems.Add(new ServiceItem("Liederbuch 3", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 3.sng"), ServiceItemType.Song));
                 ServiceItems.Add(new ServiceItem("Liederbuch 4", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 4.sng"), ServiceItemType.Song));
             }
+
 
             // Textlesung, Predigt und Gebetsanliegen
             ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Bibel-Textlesung_" + ServiceTemplateItemData.GetAttr(type).Abbreviation), 
@@ -311,12 +317,13 @@ namespace ElvantoSongbeamerIntegration.Controller
                 ServiceItems.Add(new ServiceItem("Liederbuch 5", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
             }
 
-            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Gebetsanliegen"), SongSheetOpener.UmlautsUTF8ToUnicode(Settings.Instance.PRAYER_POINTS_PPT_PATH), ServiceItemType.PPT));
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Gebetsanliegen"), SongSheetOpener.UmlautsUTF8ToUnicode(GetFilepathProperFormat(Settings.Instance.PRAYER_POINTS_PPT_PATH)), ServiceItemType.PPT));
 
             if (type == ServiceTemplateType.MorningService)
             {
                 ServiceItems.Add(new ServiceItem("Liederbuch 6", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
             }
+
 
             // 2 Diashows ans Gottesdienst-Ende und Klimakammer-Notiz
             if (type == ServiceTemplateType.EveningService)
@@ -383,8 +390,8 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         private bool AddTempDiashowImages(ref ServiceItem diashow, ServiceTemplateType type)
         {
-            var images = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList();
-            var pngImages = Directory.GetFiles(Settings.Instance.IMAGES_DIASHOW_PATH, "*.png", SearchOption.TopDirectoryOnly).ToList();
+            var images = Directory.GetFiles(Settings.Instance.DIASHOW_IMAGES_PATH, "*.jp*g", SearchOption.TopDirectoryOnly).ToList();
+            var pngImages = Directory.GetFiles(Settings.Instance.DIASHOW_IMAGES_PATH, "*.png", SearchOption.TopDirectoryOnly).ToList();
             images.AddRange(pngImages);
 
             // Format:   Enddatum_[Godi(s)]_Bild.jpg/.png
@@ -409,6 +416,34 @@ namespace ElvantoSongbeamerIntegration.Controller
             }
 
             return true;
+        }
+
+        private bool AddAnnouncementsToMediaItems(ServiceTemplateType templateType)
+        {
+            var mediaFiles = Directory.GetFiles(Settings.Instance.ANNOUNCEMENTS_PATH, "*.*", SearchOption.TopDirectoryOnly)
+                                  .Where(x => Settings.Instance.ALLOWED_MEDIA_EXTENSIONS.Contains(Path.GetExtension(x))).ToList();
+
+            // Format:   [Godi(s)_]Dateiname.Endung
+            var count = 0;
+            foreach (var path in mediaFiles)
+            {
+                var filenameSegments = Path.GetFileName(path).Split('_');
+
+                // Medien-Datei hinzufügen, wenn sie keine oder die entsprechende Gottesdienst-Einschränkung besitzt?
+                if (filenameSegments.Count() <= 1 || IsServiceInSelection(filenameSegments[0], templateType))
+                {
+                    var filename = Path.GetFileNameWithoutExtension(path);
+                    ServiceItemType? itemType = ServiceItem.GetItemTypeFromExtension(Path.GetExtension(path));
+
+                    if (!itemType.HasValue) { continue; }
+                    MediaItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(filenameSegments.Count() > 1 ? filename.Substring(filenameSegments[0].Length + 1) : filename),
+                                     SongSheetOpener.UmlautsUTF8ToUnicode(GetFilepathProperFormat(path)), itemType.Value));
+                    count++;
+
+                }
+            }
+
+            return count > 0;
         }
         #endregion
 

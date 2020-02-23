@@ -44,6 +44,39 @@ namespace ElvantoSongbeamerIntegration.Model
             SubItems.Add(image);
         }
 
+        public static ServiceItemType? GetItemTypeFromExtension(string extension)
+        {
+            switch (extension.ToLower())
+            {
+                case ".jpg":
+                case ".png":
+                    return ServiceItemType.Image;
+
+                case ".pdf":
+                    return ServiceItemType.PDF;
+
+                case ".mp3":
+                case ".wav":
+                    return ServiceItemType.Audio;
+
+                case ".ppt":
+                case ".pptx":
+                    return ServiceItemType.PPT;
+
+                case ".mp4":
+                case ".mov":
+                case ".wmv":
+                case ".avi":
+                    return ServiceItemType.Video;
+
+                case ".sng":
+                    return ServiceItemType.Song;
+
+                default:
+                    return null;
+            }
+        }
+
         private string DiashowToString(string content)
         {
             content += $"      StreamClass = 'TPresentationSlideShow'" + NewLine;

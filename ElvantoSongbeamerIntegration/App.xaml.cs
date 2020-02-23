@@ -14,7 +14,7 @@ namespace ElvantoSongbeamerIntegration
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            TestElvantoAPI().Wait();
+            //TestElvantoAPI().Wait();
 
             // Wenn genau 1 Argument übergeben wurde, gewünschte Aktion ausführen und dann Programm ohne GUI beenden
             if (e.Args.Length == 1)
@@ -22,23 +22,23 @@ namespace ElvantoSongbeamerIntegration
                 if (e.Args[0][0] == '#')
                 {
                     var servicePath = SongSheetOpener.FindCurrentlyOpenedService(e.Args[0].Remove(0, 1));
-                    TestSongbookExtractionAsync(TaskType.openSheetsService, servicePath);
+                    TestSongbookExtractionAsync(TaskType.openSheetsService, servicePath).Wait();
                 }
                 else if (e.Args[0][0] == '$')
                 {
-                    TestSongbookExtractionAsync(TaskType.findDuplicateSongs);
+                    TestSongbookExtractionAsync(TaskType.findDuplicateSongs).Wait();
                 }
                 else if (e.Args[0][0] == '§')
                 {
-                    TestSongbookExtractionAsync(TaskType.findDuplicateCCLIs);
+                    TestSongbookExtractionAsync(TaskType.findDuplicateCCLIs).Wait();
                 }
                 else if (e.Args[0][0] == '%')
                 {
-                    TestSongbookExtractionAsync(TaskType.updateServiceTemplates);
+                    TestSongbookExtractionAsync(TaskType.updateServiceTemplates).Wait();
                 }
                 else
                 {
-                    TestSongbookExtractionAsync(TaskType.openSheetSong, e.Args[0]);
+                    TestSongbookExtractionAsync(TaskType.openSheetSong, e.Args[0]).Wait();
                 }
 
                 Application.Current.Shutdown();
