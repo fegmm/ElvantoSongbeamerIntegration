@@ -400,7 +400,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             images.AddRange(pngImages);
 
             // Format:   Enddatum_[Godi(s)]_Bild.jpg/.png
-            // Vergleiche Enddatum immer mit dem des nächsten Sonntages 
+            // Vergleiche Enddatum immer mit dem des nächsten Sonntages. Enddatum kann deutsches oder amerikanisches Format haben, sogar das Jahr kann weggelassen oder verkürzt werden.
             var count = 1;
             foreach (var image in images)
             {

@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Media;
 using ElvantoSongbeamerIntegration.Model;
 using SongbeamerSongbookIntegrator;
+using ElvantoApi.Models;
+using System.Threading.Tasks;
 
 namespace ElvantoSongbeamerIntegration
 {
@@ -13,13 +15,26 @@ namespace ElvantoSongbeamerIntegration
     public partial class MainWindow : Window
     {
         private ServiceCreator ServiceCreator;
-
+        private static PeopleGetAllResponse test;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            _ = TestElvantoAPI();
+
             ServiceCreator = new ServiceCreator((string)buttonCreate.Content);
+
+        }
+        
+        private async Task<bool> TestElvantoAPI()
+        {
+            // Test ElvantoAPI
+            var elvantoClient = new ElvantoApi.Client("JcBNUpCE9Acygs95SnC4kgbryqPmurCZ");
+
+            test = await elvantoClient.PeopleGetAllAsync(new GetAllPeopleRequest()).ConfigureAwait(false);
+
+            return true;
         }
 
         private void Create_Service_Clicked(object sender, RoutedEventArgs e)

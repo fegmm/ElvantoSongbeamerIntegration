@@ -16,6 +16,9 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         private List<string> SongsInE21Cleaned = new List<string>();
 
+        private static HttpClient Client = new HttpClient();        // Instance it once saves resources: https://aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/
+
+
         public SongbookImporter(string songbookE21Path)
         {
             // Prepare E21 songs
@@ -226,17 +229,49 @@ namespace ElvantoSongbeamerIntegration.Controller
             return songbooks;
         }
 
+        public class GitHubClient
+        {
+            private readonly HttpClient _httpClient;
+
+            public GitHubClient(HttpClient httpClient)
+            {
+                _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            }
+
+            public async Task<string> GetData(string url)
+            {
+                var request = CreateRequest(url);
+                var result = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                var b = new byte[64];
+
+                using (var contentStream = await result.Content.ReadAsStreamAsync())
+                {
+                    await contentStream.ReadAsync(b, 0, 64);
+                }
+
+                return b.ToString();
+            }
+
+            private static HttpRequestMessage CreateRequest(string url)
+            {
+                return new HttpRequestMessage(HttpMethod.Get, url);
+            }
+        }
+
+
         private async Task<string> ImportSongbookFromDB(string songname)
         {
             // URL escapen
             var newUrl = SONG_DB_URL + "/search?query=" + songname.Trim().Replace("&", "%26").Replace("+", "%2B").Replace("(", "%28").Replace(")", "%29").Replace(" ", "+").Replace("<br>", "") + "&mode=title";
-            var http = new HttpClient();
             newUrl = "https://www.liederdatenbank.de/search?query=you+are+holy+(prince+of+peace)&mode=title";
 
             String source = "";
+            var client = new GitHubClient(Client);
+            var data = await client.GetData(newUrl.ToLower()).ConfigureAwait(false);
+
             try
             {
-                var response = await http.GetByteArrayAsync(newUrl.ToLower());
+                var response = await Client.GetByteArrayAsync(newUrl.ToLower()).ConfigureAwait(false);
                 source = Encoding.GetEncoding("utf-8").GetString(response, 0, response.Length - 1);
             }
             catch(Exception)
@@ -278,8 +313,7 @@ namespace ElvantoSongbeamerIntegration.Controller
 
         private async Task<string> GetSongbooksOfSong(string url, string songbook = "Feiert Jesus!", string abbreviation = "FJ")
         {
-            var http = new HttpClient();
-            var response = await http.GetByteArrayAsync(url);
+            var response = await Client.GetByteArrayAsync(url);
             String source = Encoding.GetEncoding("utf-8").GetString(response, 0, response.Length - 1);
             source = WebUtility.HtmlDecode(source);
             HtmlDocument result = new HtmlDocument();
