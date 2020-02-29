@@ -1,0 +1,10 @@
+﻿<Window x:Class="ElvantoSongbeamerIntegration.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ElvantoSongbeamerIntegration"
+        mc:Ignorable="d"
+        Title="Elvanto-Songbeamer-Integration" Height="520" Width="580">
+    <Frame Name="pageNavigation" HorizontalAlignment="Left" Height="488.943" VerticalAlignment="Top" Width="570" NavigationUIVisibility="Hidden" Loaded="Window_Loaded"/>
+</Window>

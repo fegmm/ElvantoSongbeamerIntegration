@@ -1,11 +1,13 @@
-﻿<Window x:Class="ElvantoSongbeamerIntegration.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ElvantoSongbeamerIntegration"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="519.146" Width="576">
+﻿<Page x:Class="SongbeamerSongbookIntegrator.View.CreateService"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:SongbeamerSongbookIntegrator.View"
+      mc:Ignorable="d" 
+      d:DesignHeight="490" d:DesignWidth="570" 
+      Title="CreateService">
+
     <Grid>
         <Label Content="Lieder für Ablauf hier reinkopieren (Je Zeile ein Lied):" HorizontalAlignment="Left" Margin="46,14,0,0" VerticalAlignment="Top"/>
         <TextBox Name="songsInput" HorizontalAlignment="Left" Height="208" Margin="46,45,0,0" AcceptsReturn="True" TextWrapping="Wrap" VerticalAlignment="Top" Width="466" SpellCheck.IsEnabled="True" ToolTip="Lieder für Ablauf" AutomationProperties.IsRequiredForForm="True"/>
@@ -25,4 +27,4 @@
         <Button Name="buttonCreate" Content="Ablauf erstellen" HorizontalAlignment="Left" Margin="85,437,0,0" VerticalAlignment="Top" Width="163" Height="29" Click="Create_Service_Clicked"/>
         <CheckBox Name="optionOpenSongbeamer" Content="Erstellten Ablauf in Songbeamer öffnen" IsChecked="True" HorizontalAlignment="Left" Margin="269,444,0,0" VerticalAlignment="Top" />
     </Grid>
-</Window>
+</Page>

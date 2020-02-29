@@ -1,10 +1,13 @@
 ﻿using ElvantoApi.Models;
 using ElvantoSongbeamerIntegration.Controller;
 using ElvantoSongbeamerIntegration.Model;
+using ElvantoSongbeamerIntegration.View;
 using SongbeamerSongbookIntegrator;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+
+// Hinweise bei Problemen mit Mischung von synchronem und asynchromen Code: https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md
 
 namespace ElvantoSongbeamerIntegration
 {
@@ -58,7 +61,7 @@ namespace ElvantoSongbeamerIntegration
             var songbookImporter = new SongbookImporter(Settings.Instance.E21_SONGS_PATH);
             var songSheetOpener = new SongSheetOpener(Settings.Instance.E21_SONGS_PATH, Settings.Instance.URL_EXCEPTIONS_PATH);
             var ccliIntegrator = new SongselectIntegrator();
-            var serviceCreator = new ServiceCreator("");
+            var serviceCreator = new ServiceCreator("", true);
             var logString = "";
 
             switch (taskType)

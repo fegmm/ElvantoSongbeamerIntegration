@@ -1,52 +1,37 @@
-﻿using Microsoft.Win32;
-using ElvantoSongbeamerIntegration.Controller;
-using System.Windows;
-using System.Windows.Media;
+﻿using ElvantoSongbeamerIntegration.Controller;
 using ElvantoSongbeamerIntegration.Model;
-using SongbeamerSongbookIntegrator;
-using ElvantoApi.Models;
-using System.Threading.Tasks;
+using Microsoft.Win32;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
-namespace ElvantoSongbeamerIntegration
+namespace SongbeamerSongbookIntegrator.View
 {
     /// <summary>
-    /// Interaktionslogik für MainWindow.xaml
+    /// Interaktionslogik für CreateService.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class CreateService : Page
     {
         private ServiceCreator ServiceCreator;
-        private static PeopleGetAllResponse test;
 
-        public MainWindow()
+        public CreateService()
         {
             InitializeComponent();
 
-            _ = TestElvantoAPI();
-
-            ServiceCreator = new ServiceCreator((string)buttonCreate.Content);
-
-        }
-        
-        private async Task<bool> TestElvantoAPI()
-        {
-            // Test ElvantoAPI
-            var elvantoClient = new ElvantoApi.Client("JcBNUpCE9Acygs95SnC4kgbryqPmurCZ");
-
-            test = await elvantoClient.PeopleGetAllAsync(new GetAllPeopleRequest()).ConfigureAwait(false);
-
-            return true;
+            ServiceCreator = new ServiceCreator((string)buttonCreate.Content, false);
         }
 
         private void Create_Service_Clicked(object sender, RoutedEventArgs e)
         {
-            var options = new ServiceCreatorOptions() {
-                IsForYouth             = optionForYouth.IsChecked ?? false,
-                OpenSongbeamer         = optionOpenSongbeamer.IsChecked ?? false,
-                PptAsSecondChance      = optionAlsoPPTs.IsChecked ?? false,
+            var options = new ServiceCreatorOptions()
+            {
+                IsForYouth = optionForYouth.IsChecked ?? false,
+                OpenSongbeamer = optionOpenSongbeamer.IsChecked ?? false,
+                PptAsSecondChance = optionAlsoPPTs.IsChecked ?? false,
                 RecognizeOptionalSongs = optionOptionalSongs.IsChecked ?? false,
-                RecognizeSermon        = optionSermonIncluded.IsChecked ?? false,
-                UseCCLI                = optionUseCCLI.IsChecked ?? false
-            }; 
+                RecognizeSermon = optionSermonIncluded.IsChecked ?? false,
+                UseCCLI = optionUseCCLI.IsChecked ?? false
+            };
 
             // Inhalte prüfen
             errorLabel.Content = "";
@@ -60,9 +45,9 @@ namespace ElvantoSongbeamerIntegration
 
             // Labels setzen
             errorLabel.Foreground = new SolidColorBrush(Colors.Red);
-            errorLabel.Content   = ServiceCreator.ErrorLabel;
+            errorLabel.Content = ServiceCreator.ErrorLabel;
             buttonCreate.Content = ServiceCreator.CreateButtonText;
-            songsInput.Text      = ServiceCreator.SongsInput;
+            songsInput.Text = ServiceCreator.SongsInput;
 
             // Anwendung bei Erfolg schließen
             if (success) { Application.Current.Shutdown(); }
@@ -84,7 +69,7 @@ namespace ElvantoSongbeamerIntegration
             return "Ok";
         }*/
 
-        
+
 
         private void buttonIncludeMedia_Click(object sender, RoutedEventArgs e)
         {
