@@ -23,16 +23,18 @@ namespace ElvantoSongbeamerIntegration.Controller
         private List<ServiceItem> MediaItems         = new List<ServiceItem>();
 
         public string ErrorLabel       { get; private set; }
+        public bool   ShowErrors       { get; private set; }
         public string CreateButtonText { get; private set; }
         public string SongsInput       { get; private set; }
         #endregion
 
 
         #region Initialization
-        public ServiceCreator(string createButtonText)
+        public ServiceCreator(string createButtonText, bool showErrors)
         {
             this.CreateButtonText = createButtonText;
             this.ErrorLabel = "";
+            this.ShowErrors = showErrors;
             InitSongDictionaries(false);
         }
 
@@ -96,7 +98,7 @@ namespace ElvantoSongbeamerIntegration.Controller
                 }
                 catch
                 {
-                    if (!initPPTsElseSngs)
+                    if (!initPPTsElseSngs && ShowErrors)
                     {
                         // Datei-Name nicht unique...
                         MessageBox.Show(path, "Doppeltes Lied: " + (initPPTsElseSngs ? "PPTs" : "SNGs"), MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -113,6 +115,37 @@ namespace ElvantoSongbeamerIntegration.Controller
 
             // Aus Text ServiceItems extrahieren
             var success = ExtractServiceItems();
+            if (!success) { return success; } // Nutzeraktion erforderlich
+
+            // Ablauf speichern und ggf. Songbeamer damit öffnen
+            var path = SaveServicePlanToFile();
+            success = !string.IsNullOrEmpty(path);
+
+            if (success && Options.OpenSongbeamer)
+            {
+                Process process = new Process();
+                process.StartInfo.Arguments = $"\"{path}\"";
+
+                try
+                {
+                    var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Classes\SongBeamer.Schedule\shell\open\command", false);
+                    var value = key.GetValue("").ToString().Substring(1);
+                    process.StartInfo.FileName = value.Substring(0, value.IndexOf("\""));
+
+                    process.Start();
+                }
+                catch (Exception) { }
+            }
+
+            return success;
+        }
+
+        public bool IntegrateServiceSchudule(ServiceTemplateType type, bool isBistro)
+        {
+            if (!IsInitialized) { return false; }
+
+            // Aus Text ServiceItems extrahieren
+            var success = IntegrateServiceInTemplate(type, isBistro);
             if (!success) { return success; } // Nutzeraktion erforderlich
 
             // Ablauf speichern und ggf. Songbeamer damit öffnen
@@ -185,24 +218,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             if (ServiceItems.Count < 1) { ErrorLabel = "Fehler: Es wurde kein Song gefunden."; return ""; }
 
             // Inhalte zusammenfügen
-            var text = "object AblaufPlanItems: TAblaufPlanItems" + ServiceItem.NewLine + "  items = <" + ServiceItem.NewLine;
-
-            // Manipulation 0: Bei normalen Veranstaltungen: Notiz: Läuft Klimakammer?
-            if (!Options.IsForYouth)
-            {
-                var noteKlimakammer = new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Check 1: Läuft Klimakammer?"), null, ServiceItemType.Note);
-                text += noteKlimakammer.ToString();
-            }
-
-            // Manipulation 1:  Diashow - Vor dem Gottesdienst
-            if (!Options.IsForYouth)
-            {
-                var diashow = new ServiceItem("Vor dem Gottesdienst anzeigen!", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
-
-                text += diashow.ToString();
-            }
+            var text = GetFirstServiceLine();
 
             // Lieder (.sng oder auch .ppt) an den Anfang
             foreach (var item in ServiceItems)
@@ -213,34 +229,9 @@ namespace ElvantoSongbeamerIntegration.Controller
             // Mediendateien ans Ende fügen
             // Manipulation 2:  falls normaler Gottesdienst: Notiz ans Ende
             if (MediaItems.Any()) { MediaItems.Insert(0, new ServiceItem("Medien:", null, ServiceItemType.Note)); }
-
             foreach (var item in MediaItems)
             {
                 text += item.ToString();
-            }
-
-            // Manipulation 3:  2 Diashows ans Gottesdienst-Ende und Klimakammer-Notiz
-            if (!Options.IsForYouth)
-            {
-                var diashow = new ServiceItem("Outro, falls KEIN Bistro", null, ServiceItemType.Diashow);
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
-                diashow.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
-
-                text += diashow.ToString();
-
-                var diashow2 = new ServiceItem("Outro, falls Bistro", null, ServiceItemType.Diashow);
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-M12-Bistro-Abends.jpg", ServiceItemType.Image));
-                diashow2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
-
-                text += diashow2.ToString();
-
-                var noteKlimakammerSwitchedOff = new ServiceItem("Check 2: Klimakammer ausgeschaltet?", null, ServiceItemType.Note);
-                text += noteKlimakammerSwitchedOff.ToString();
             }
 
             text = text.Remove(text.Length - ServiceItem.NewLine.Length, ServiceItem.NewLine.Length);
@@ -278,7 +269,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             MediaItems.Clear();
 
             // Ablauf-Datei eröffnen
-            var text = "object AblaufPlanItems: TAblaufPlanItems" + ServiceItem.NewLine + "  items = <" + ServiceItem.NewLine;
+            var text = GetFirstServiceLine();
 
             // Notiz: Läuft Klimakammer?
             if (Settings.Instance.ADD_KLIMAKAMMER_NOTES) { ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("-> Läuft Klimakammer?"), null, ServiceItemType.Note2)); }
@@ -367,6 +358,146 @@ namespace ElvantoSongbeamerIntegration.Controller
             text += ">" + ServiceItem.NewLine + "end" + ServiceItem.NewLine;
 
             return text;
+        }
+
+        private void AddKlimakammerNoteStart()
+        {
+            // Notiz: Läuft Klimakammer?
+            if (Settings.Instance.ADD_KLIMAKAMMER_NOTES) { ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("-> Läuft Klimakammer?"), null, ServiceItemType.Note2)); }
+        }
+
+        private void AddKlimakammerNoteEnd(ServiceTemplateType type)
+        {
+            // Notiz: Läuft Klimakammer?
+            if (Settings.Instance.ADD_KLIMAKAMMER_NOTES && type == ServiceTemplateType.EveningService) { ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("-> Klimakammer ausgeschaltet?"), null, ServiceItemType.Note2)); }
+        }
+
+        private void AddPrayerPoints()
+        {
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Gebetsanliegen"), SongSheetOpener.UmlautsUTF8ToUnicode(GetFilepathProperFormat(Settings.Instance.PRAYER_POINTS_PPT_PATH)), ServiceItemType.PPT));
+        }
+
+        private void AddSermon()
+        {
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Predigt ---"), null, ServiceItemType.Note));
+        }
+
+        private void AddLordsSupper()
+        {
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Abendmahl ---"), null, ServiceItemType.Note));
+        }
+
+        private void AddTextlesung(ServiceTemplateType type)
+        {
+            // Textlesung, Predigt und Gebetsanliegen
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("Bibel-Textlesung_" + ServiceTemplateItemData.GetAttr(type).Abbreviation),
+                                             SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Bibel-Textlesung_{ServiceTemplateItemData.GetAttr(type).Abbreviation}.sng"), ServiceItemType.TextReading));
+
+        }
+
+        private void AddDiashowBeforeService(ServiceTemplateType type)
+        {
+            // Diashow - Vor dem Gottesdienst
+            var diashowBeginning = new ServiceItem("Diashow vor Gottesdienst anzeigen", null, ServiceItemType.Diashow);
+            diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Handy-lautlos.jpg", ServiceItemType.Image));
+            if (type != ServiceTemplateType.MiddayService) { diashowBeginning.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image)); }
+            else { AddTempDiashowImages(ref diashowBeginning, type); }
+
+            ServiceItems.Add(diashowBeginning);
+        }
+
+        private void AddDiashowAfterService(ServiceTemplateType type, bool isBistro)
+        {
+            // Diashow am Ende gibt es nicht für Mittaggottesdienst. Falls Bistro ist, extra Bild einfügen
+            if (type != ServiceTemplateType.MiddayService)
+            {
+                var bistroText = isBistro ? "Diashow mit BISTRO" : "Diashow OHNE Bistro";
+                var diashowEnd2 = new ServiceItem(type == ServiceTemplateType.EveningService ? bistroText : "Diashow nach Gottesdienst anzeigen", null, ServiceItemType.Diashow);
+                var imageSnackFilename = type == ServiceTemplateType.MorningService ? "FEGMM-Beamerfolie-M12-Bistro-Morgens.jpg" : "FEGMM-Beamerfolie-M12-Bistro-Abends.jpg";
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 1", $"{Settings.Instance.IMAGES_PATH}\\I_punkt2.png", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 2", $"{Settings.Instance.IMAGES_PATH}\\FEGMM-Beamerfolie-Gebet.jpg", ServiceItemType.Image));
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 3", $"{Settings.Instance.IMAGES_PATH}\\I_punkt1.png", ServiceItemType.Image));
+
+                if (isBistro) { diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 4", $"{Settings.Instance.IMAGES_PATH}\\{imageSnackFilename}", ServiceItemType.Image)); }
+                
+                diashowEnd2.AddSubItemForDiashow(new ServiceItem("Bild 5", $"{Settings.Instance.IMAGES_PATH}\\I_punkt3.png", ServiceItemType.Image));
+                AddTempDiashowImages(ref diashowEnd2, type);
+
+                ServiceItems.Add(diashowEnd2);
+            }
+        }
+
+        private string GetFirstServiceLine() => "object AblaufPlanItems: TAblaufPlanItems" + ServiceItem.NewLine + "  items = <" + ServiceItem.NewLine;
+
+        // Achtung: Das ServiceTemplateType.Youth wird hier nicht unterstützt bislang!
+        private bool IntegrateServiceInTemplate(ServiceTemplateType type, bool isBistro)
+        {
+            ServiceItems.Clear();
+            MediaItems.Clear();
+
+            // Gottesdienst-Beginn
+            AddKlimakammerNoteStart();
+            AddDiashowBeforeService(type);
+
+            // Liederbücher bei Morgengodi und Ansagen dazwischen
+            var items = SongsInput.Split(new string[] { ServiceItem.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            var songCount = 0;
+            var shortSongInput = true;
+            foreach (var item in items)
+            {
+                if (item == "Ansagen")
+                {
+                    var areAnnouncements = AddAnnouncementsToMediaItems(type);
+                    ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(areAnnouncements ? "Ansagen:" : "--- Ansagen ---"), null, ServiceItemType.Note));
+                    ServiceItems.AddRange(MediaItems);
+                }
+                else if (item == "Textlesung")
+                {
+                    AddTextlesung(type);
+                }
+                else if (item == "Gebetsanliegen")
+                {
+                    AddPrayerPoints();
+                }
+                else if (item == "Predigt")
+                {
+                    AddSermon();
+                }
+                else if (item == "Abendmahl")
+                {
+                    AddLordsSupper();
+                }
+                else
+                {
+                    var itemType = ExtractSingleServiceItem(item, ServiceItem.NewLine.Length, false, false);
+                    shortSongInput = false;
+
+                    // TODO: Error Handling
+                    if (itemType == ServiceItemType.Song) { songCount++; }
+                }
+
+                if (shortSongInput)
+                {
+                    SongsInput = SongsInput.Remove(0, SongsInput.Length > item.Length ? item.Length + ServiceItem.NewLine.Length : item.Length);
+                }
+                else { shortSongInput = true; }
+            }
+
+            if (type == ServiceTemplateType.MorningService)
+            {
+                ServiceItems.Add(new ServiceItem("Liederbuch 1", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 1.sng"), ServiceItemType.Song));
+                ServiceItems.Add(new ServiceItem("Liederbuch 2", SongSheetOpener.UmlautsUTF8ToUnicode($"{Settings.Instance.TEMPLATE_FILES_FOLDER}\\Liederbuch 2.sng"), ServiceItemType.Song));
+
+            }
+
+            // Gottesdienst-Ende
+            AddDiashowAfterService(type, isBistro);
+            AddKlimakammerNoteEnd(type);
+
+            // Medien-Dateien löschen, damit sie nicht doppelt hinzugefügt werden
+            MediaItems.Clear();
+
+            return true;
         }
 
         private bool IsServiceInSelection(string serviceSelector, ServiceTemplateType type)
@@ -482,50 +613,8 @@ namespace ElvantoSongbeamerIntegration.Controller
             // Zeilenweise durchgehen
             foreach (var song in songList)
             {
-                if (!song.Any())
-                {
-                    if (SongsInput.Length > 1) { SongsInput = SongsInput.Remove(0, newLineLength); }
-                    continue;
-                }
-
-                // Filtern:  Zahlen und Leerzeilen entfernen
-                var cleanedTitle = ExtractSongTitle(song);
-
-                // Ist kein Lied, sonder Hinweis auf Andacht -> Notiz hinzufügen und weiter
-                var sermonResult = FindAndRemoveSermonStatement(cleanedTitle, song);
-                if (sermonResult.Item1)
-                {
-                    ServiceItems.Add(new ServiceItem(Options.IsForYouth ? "--- Thema ---" : "--- Predigt ---", null, ServiceItemType.Note));
-                    SongsInput = SongsInput.Remove(0, song.Length + newLineLength);
-                    continue;
-                }
-
-                // Folgendes Lied ist optional: Davor eine Notiz hinzufügen
-                var optionalResult = FindAndRemoveOptionalStatement(sermonResult.Item2, song);
-                if (optionalResult.Item1) { cleanedTitle = optionalResult.Item2; ServiceItems.Add(new ServiceItem("Optional:", null, ServiceItemType.Note)); }
-
-                // Extra-Daten.
-                var intelligentCleanedTitle = RemoveExtraInfos(optionalResult.Item2, removeBrackets, removeMinusSeparators);
-
-                // Dateipfad zu Song herausfinden, ggf. mit Teilstring suchen.
-                var searchResult = GetFilepathForSongTitle(intelligentCleanedTitle);
-                var relativePath = searchResult.Item2;
-                var isPPT = searchResult.Item1;
-                if (relativePath == null) { return false; }
-                if (relativePath != "")
-                {
-                    if (isPPT)
-                    {
-                        ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.PPT));
-                    }
-                    else
-                    {
-                        ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.Song));
-                    }
-                }
-
-                // Falls Fehler auftreten bis zur aktuellen Abarbeitung alles Löschen
-                SongsInput = SongsInput.Remove(0, SongsInput.Length > song.Length ? song.Length + newLineLength : song.Length);
+                var result = ExtractSingleServiceItem(song, newLineLength, removeBrackets, removeMinusSeparators);
+                if (result == ServiceItemType.Error) { return false; }
             }
 
             // Bei Jugend: Ans Ende Jugendprogramm als Bild, falls vorhanden, anhängen
@@ -537,6 +626,56 @@ namespace ElvantoSongbeamerIntegration.Controller
             }
 
             return true;
+        }
+
+        private ServiceItemType ExtractSingleServiceItem(string song, int newLineLength, bool removeBrackets, bool removeMinusSeparators)
+        {
+            if (!song.Any())
+            {
+                if (SongsInput.Length > 1) { SongsInput = SongsInput.Remove(0, newLineLength); }
+                return ServiceItemType.None;
+            }
+
+            // Filtern:  Zahlen und Leerzeilen entfernen
+            var cleanedTitle = ExtractSongTitle(song);
+
+            // Ist kein Lied, sonder Hinweis auf Andacht -> Notiz hinzufügen und weiter
+            var sermonResult = FindAndRemoveSermonStatement(cleanedTitle, song);
+            if (sermonResult.Item1)
+            {
+                ServiceItems.Add(new ServiceItem(Options.IsForYouth ? "--- Thema ---" : "--- Predigt ---", null, ServiceItemType.Note));
+                SongsInput = SongsInput.Remove(0, song.Length + newLineLength);
+                return ServiceItemType.Note;
+            }
+
+            // Folgendes Lied ist optional: Davor eine Notiz hinzufügen
+            var optionalResult = FindAndRemoveOptionalStatement(sermonResult.Item2, song);
+            if (optionalResult.Item1) { cleanedTitle = optionalResult.Item2; ServiceItems.Add(new ServiceItem("Optional:", null, ServiceItemType.Note)); }
+
+            // Extra-Daten.
+            var intelligentCleanedTitle = RemoveExtraInfos(optionalResult.Item2, removeBrackets, removeMinusSeparators);
+
+            // Dateipfad zu Song herausfinden, ggf. mit Teilstring suchen.
+            var searchResult = GetFilepathForSongTitle(intelligentCleanedTitle);
+            var relativePath = searchResult.Item2;
+            var isPPT = searchResult.Item1;
+            if (relativePath == null) { return ServiceItemType.Error; }
+            if (relativePath != "")
+            {
+                if (isPPT)
+                {
+                    ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.PPT));
+                }
+                else
+                {
+                    ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(Path.GetFileNameWithoutExtension(relativePath)), relativePath, ServiceItemType.Song));
+                }
+            }
+
+            // Falls Fehler auftreten bis zur aktuellen Abarbeitung alles Löschen
+            SongsInput = SongsInput.Remove(0, SongsInput.Length > song.Length ? song.Length + newLineLength : song.Length);
+
+            return ServiceItemType.Song;
         }
 
         private Tuple<bool, string> FindAndRemoveOptionalStatement(string title, string uncleanedTitle)
@@ -726,7 +865,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             return nextFriday.ToString("yyyy-MM-dd");
         }
 
-        private DateTime GetNextSunday()
+        public static DateTime GetNextSunday()
         {
             var today = DateTime.Today;
 

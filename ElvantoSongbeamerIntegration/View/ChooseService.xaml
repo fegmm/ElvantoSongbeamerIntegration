@@ -1,0 +1,23 @@
+﻿<Page x:Class="SongbeamerSongbookIntegrator.View.ChooseService"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:SongbeamerSongbookIntegrator.View"
+      mc:Ignorable="d" 
+       d:DesignHeight="490" d:DesignWidth="570" 
+      Title="ChooseService">
+
+    <Grid>
+        <Label Content="Lieder für Ablauf hier reinkopieren (Je Zeile ein Lied):" HorizontalAlignment="Left" Margin="46,14,0,0" VerticalAlignment="Top"/>
+
+        <Label Content="Einstellungen:" HorizontalAlignment="Left" Margin="42,265,0,0" VerticalAlignment="Top"/>
+        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" Height="105" Margin="46,293,0,0" VerticalAlignment="Top" Width="466" IsEnabled="False" />
+
+        <Label Name="errorLabel" Content="" HorizontalAlignment="Left" Margin="48,403,0,0" VerticalAlignment="Top" Background="{x:Null}" Width="466" Foreground="Red" FontWeight="Bold"/>
+        <Button Name="buttonStart" Content="Start" HorizontalAlignment="Left" Margin="85,437,0,0" VerticalAlignment="Top" Width="163" Height="29" Click="buttonStart_Click"/>
+        <CheckBox Name="optionOpenSongbeamer" Content="Erstellten Ablauf in Songbeamer öffnen" IsChecked="True" HorizontalAlignment="Left" Margin="269,444,0,0" VerticalAlignment="Top" />
+        <ListBox Name="serviceListBox" HorizontalAlignment="Left" Height="67.852" Margin="196.227,220.148,0,0" VerticalAlignment="Top" Width="126.145" SelectiveScrollingGrid.SelectiveScrollingOrientation="None" SelectedIndex="1"/>
+        <DatePicker Name="datePicker" HorizontalAlignment="Left" Margin="340.116,248.05,0,0" VerticalAlignment="Top" Height="21.197" Width="156.566" />
+    </Grid>
+</Page>

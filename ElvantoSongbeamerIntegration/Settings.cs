@@ -24,14 +24,19 @@
         public string PRAYER_POINTS_PPT_PATH;
         public string URL_EXCEPTIONS_PATH;
         public string CCLI_DICT_PATH;
+        public string ENGLISH_WORDS_PATH;
+        public string GERMAN_WORDS_PATH;
 
         public readonly string ELVANTO_URL = "https://fegmm.elvanto.eu";
         public readonly string SONGS_PART_URL = "/songs/";       
 
         private Settings()
         {
-            E21_SONGS_PATH         = $"{SCRIPTS_PATH}\\E21-Liederbuch (ohne Kommata).txt";
-            URL_EXCEPTIONS_PATH    = $"{SCRIPTS_PATH}\\ElvantoURLExceptions.txt";
+            E21_SONGS_PATH         = $"{SCRIPTS_PATH}\\data\\E21-Liederbuch (ohne Kommata).txt";
+            URL_EXCEPTIONS_PATH    = $"{SCRIPTS_PATH}\\data\\ElvantoURLExceptions.txt";
+            ENGLISH_WORDS_PATH     = $"{SCRIPTS_PATH}\\data\\Top5000EnglishWords.txt";
+            GERMAN_WORDS_PATH      = $"{SCRIPTS_PATH}\\data\\Top5000GermanWords.txt";
+
             CCLI_DICT_PATH         = $"{SONGS_PATH}\\CcliDictionary.jstxt";
             PRAYER_POINTS_PPT_PATH = $"{MEDIA_PATH}\\Gebetsanliegen.pptx";
 
