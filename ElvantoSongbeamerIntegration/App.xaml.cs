@@ -50,9 +50,11 @@ namespace ElvantoSongbeamerIntegration
             /*TestSongbookExtractionAsync(TaskType.importSongbooksToAllSongs).Wait();
             Application.Current.Shutdown();
             return;*/
-            
+
+            var startWithIntegrator = e.Args.Length == 2 && e.Args[1].Equals("ElvantoIntegration");
+
             // Sonst GUI zum Zusammenstellen eines Ablaufs aus Liedern anzeigen (MainWindow.xaml)  -> Properties -> Debug -> Befehlszeilenargumente
-            MainWindow mainWindow = new MainWindow();
+            MainWindow mainWindow = new MainWindow(startWithIntegrator);
             mainWindow.Show();
         }
 

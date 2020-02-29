@@ -8,14 +8,18 @@ namespace ElvantoSongbeamerIntegration.View
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private bool StartWithElvantoIntegrator;
+
+        public MainWindow(bool startElvantoIntegrator)
         {
+            StartWithElvantoIntegrator = startElvantoIntegrator;
+
             InitializeComponent();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            pageNavigation.NavigationService.Navigate(new CreateService());
+            pageNavigation.NavigationService.Navigate(StartWithElvantoIntegrator ? new ChooseService() : new CreateService());
         }
     }
 }
