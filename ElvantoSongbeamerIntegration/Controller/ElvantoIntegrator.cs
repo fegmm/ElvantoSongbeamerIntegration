@@ -2,15 +2,11 @@
 using ElvantoSongbeamerIntegration.Controller;
 using ElvantoSongbeamerIntegration.Model;
 using Newtonsoft.Json.Linq;
-using SongbeamerSongbookIntegrator.Controller;
 using SongbeamerSongbookIntegrator.Model;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace SongbeamerSongbookIntegrator.Controller
 {
@@ -27,13 +23,7 @@ namespace SongbeamerSongbookIntegrator.Controller
         public bool IsInitialized { get; private set; } = false;
         #endregion
 
-        public async Task<ServicesGetAllResponse> ServicesGetAllAsync()
-            => await ElvantoClient.CallAsync<ServicesGetAllResponse>("v1/services/getAll.json", new { all = "yes" });
-
-        // Siehe https://www.elvanto.com/api/services/getInfo/
-        public async Task<ServiceGetDetailsResponse> ServiceGetDetailsAsync(string serviceId)
-          => await ElvantoClient.CallAsync<ServiceGetDetailsResponse>("v1/services/getInfo.json", new { id = serviceId, fields = new[] { "volunteers", "plans", "songs" } });
-
+      
         public ElvantoIntegrator()
         {
         }
@@ -50,7 +40,7 @@ namespace SongbeamerSongbookIntegrator.Controller
         {
             var key = GetApiKey();
             ElvantoClient = new ElvantoApi.Client(key);
-            AllServicesResponse = await /*ElvantoClient.*/ServicesGetAllAsync();
+            AllServicesResponse = await ElvantoClient.ServicesGetAllNoFieldsAsync();
 
             await InitLanguageDetection();
 
@@ -88,7 +78,7 @@ namespace SongbeamerSongbookIntegrator.Controller
             if (singleService.Count() == 0) { Errors = "Gottesdienst konnte nicht gefunden werden!"; return false; }
             if (singleService.Count() > 1) { Errors = "Gottesdienst-Angaben waren nicht eindeutig: " + ServiceItem.NewLine + string.Join(",", singleService.Select(x => x.date)); return false; }
 
-            ServiceDetailsResponse = await ServiceGetDetailsAsync(singleService.First().id);
+            ServiceDetailsResponse = await ElvantoClient.ServiceGetDetailsAsync(singleService.First().id);
             if (!ServiceDetailsResponse.status.Equals("ok")) { Errors = "Gottesdienst-Details konnten nicht richtig gefunden werden!"; return false; }
             var service = ServiceDetailsResponse.service.First();
 
