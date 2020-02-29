@@ -177,7 +177,7 @@ namespace ElvantoSongbeamerIntegration.Controller
             var filepath = Options.IsForYouth ? $"{Settings.Instance.SERVICES_YOUTH_PATH}\\{GetNextFridayAsString()}_Jugend.col" : GetSavePathFromFileDialog();
             if (File.Exists(filepath))
             {
-                if (MessageBox.Show("Ablauf-Datei ist schon vorhanden. Überschreiben?", "Datei ersetzen?", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                if (Options.IsForYouth && MessageBox.Show("Ablauf-Datei ist schon vorhanden. Überschreiben?", "Datei ersetzen?", MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 {
                     var cancel = true;
                     if (Options.IsForYouth)

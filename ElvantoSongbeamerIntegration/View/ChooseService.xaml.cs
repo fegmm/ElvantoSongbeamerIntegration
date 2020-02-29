@@ -1,10 +1,12 @@
 ﻿using ElvantoSongbeamerIntegration.Controller;
 using SongbeamerSongbookIntegrator.Controller;
 using SongbeamerSongbookIntegrator.Model;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SongbeamerSongbookIntegrator.View
 {
@@ -53,14 +55,44 @@ namespace SongbeamerSongbookIntegrator.View
         #region GUI Interaction
         private void buttonStart_Click(object sender, RoutedEventArgs e)
         {
+            errorLabel.Foreground = new SolidColorBrush(Colors.Red);
+
             if (!datePicker.SelectedDate.HasValue) { errorLabel.Content = "Bitte Datum auswählen"; }
 
             var serviceType = (ServiceTemplateType)serviceListBox.SelectedIndex;
             var dateAndTime = datePicker.SelectedDate.Value.AddHours(Services[((string)serviceListBox.SelectedItem)]);
+            var openSongbeamer = optionOpenSongbeamer.IsChecked ?? false;
 
-            Integrator.CreateScheduleForService(dateAndTime, serviceType).ConfigureAwait(false);
+            Integrator.IntegrationFinishedEvent += IntegrationFinished;
+            Integrator.CreateScheduleForService(dateAndTime, serviceType, openSongbeamer).ConfigureAwait(false);
+            
+        }
+
+        private void changeToServiceCreator_Click(object sender, RoutedEventArgs e)
+        {
+            this.NavigationService.Navigate(new CreateService());
+        }
+
+        private void IntegrationFinished(object sender, EventArgs e)
+        {
             errorLabel.Content = Integrator.Errors;
+
+            if (string.IsNullOrEmpty(Integrator.Errors)) 
+            {
+                if (string.IsNullOrEmpty(Integrator.Warnings))
+                {
+                    errorLabel.Foreground = new SolidColorBrush(Colors.Yellow);
+                    errorLabel.Content = Integrator.Warnings;
+                }
+                else
+                {
+                    errorLabel.Foreground = new SolidColorBrush(Colors.Green);
+                    errorLabel.Content = "Der Ablauf wurde erfolgreich erstellt";
+                }
+            }
         }
         #endregion
+
+      
     }
 }

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace SongbeamerSongbookIntegrator.Controller
 {
+    // Beware https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md
     public class ElvantoIntegrator
     {
         #region Variablen
@@ -21,9 +22,12 @@ namespace SongbeamerSongbookIntegrator.Controller
         public string Errors { get; private set; } = "";
         public string Warnings { get; private set; } = "";
         public bool IsInitialized { get; private set; } = false;
+
+        public delegate void IntegrationFinished(object sender, EventArgs e);
+        public event IntegrationFinished IntegrationFinishedEvent;
         #endregion
 
-      
+
         public ElvantoIntegrator()
         {
         }
@@ -65,7 +69,7 @@ namespace SongbeamerSongbookIntegrator.Controller
             return new string(key);
         }
 
-        public async Task<bool> CreateScheduleForService(DateTime dateTime, ServiceTemplateType serviceType)
+        public async Task<bool> CreateScheduleForService(DateTime dateTime, ServiceTemplateType serviceType, bool openSongbeamer)
         {
             if (!IsInitialized || AllServicesResponse.services == null) { Errors = "Elvanto-Integrator ist noch nicht fertig initialisiert."; return false; }
 
@@ -116,7 +120,7 @@ namespace SongbeamerSongbookIntegrator.Controller
             var options = new ServiceCreatorOptions()
             {
                 IsForYouth = false,
-                OpenSongbeamer = true,
+                OpenSongbeamer = openSongbeamer,
                 PptAsSecondChance = false,
                 RecognizeOptionalSongs = false,
                 RecognizeSermon = false,
@@ -127,6 +131,8 @@ namespace SongbeamerSongbookIntegrator.Controller
             serviceCreator.Init(options, songsInput);
 
             var result = serviceCreator.IntegrateServiceSchudule(serviceType, isBistro);
+
+            IntegrationFinishedEvent?.Invoke(this, new EventArgs());
 
             return result;
         }

@@ -18,8 +18,9 @@ namespace ElvantoSongbeamerIntegration.View
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            pageNavigation.NavigationService.Navigate(StartWithElvantoIntegrator ? new ChooseService() : new CreateService());
+        {           
+            if (StartWithElvantoIntegrator) { pageNavigation.NavigationService.Navigate(new ChooseService()); }
+            else { pageNavigation.NavigationService.Navigate(new CreateService()); }
         }
     }
 }
