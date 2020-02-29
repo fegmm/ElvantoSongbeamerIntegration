@@ -188,7 +188,7 @@ namespace ElvantoSongbeamerIntegration.Model
             if (utf.Length > 64)
             {
                 var part1 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(0, 64));
-                var part2 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(64, 128));
+                var part2 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(64, utf.Length > 128 ? 64 : utf.Length - 64));
 
                 return $"{NewLine}        '{part1}' +{NewLine}        '{part2}'" + (part3 != "" ? $" +{NewLine}        '{part3}'" : "");
             }
