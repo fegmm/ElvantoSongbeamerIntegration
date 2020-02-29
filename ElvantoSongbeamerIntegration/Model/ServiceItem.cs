@@ -14,6 +14,7 @@ namespace ElvantoSongbeamerIntegration.Model
         private string              Filename;
         private ServiceItemType     Type;
         private List<ServiceItem>   SubItems; // Für Diashow
+        private string              VerseOrder;
 
         public ServiceItem(string caption, string filename, ServiceItemType type)
         {
@@ -31,8 +32,9 @@ namespace ElvantoSongbeamerIntegration.Model
             content += $"      Color = {GetAttr(Type).Color}" + NewLine;
             if (Type == ServiceItemType.Diashow) { return DiashowToString(content); }
 
-            if (GetAttr(Type).BGColor != null)   { content += $"      BGColor = {GetAttr(Type).BGColor}" + NewLine; }
-            if (!string.IsNullOrEmpty(Filename)) { content += $"      FileName = {SplitStringIfOver64CharsAddSingleQuote(Filename)}" + NewLine; }
+            if (GetAttr(Type).BGColor != null)     { content += $"      BGColor = {GetAttr(Type).BGColor}" + NewLine; }
+            if (!string.IsNullOrEmpty(Filename))   { content += $"      FileName = {SplitStringIfOver64CharsAddSingleQuote(Filename)}" + NewLine; }
+            if (!string.IsNullOrEmpty(VerseOrder)) { content += $"      VerseOrder = {SplitStringIfOver64CharsAddSingleQuote(VerseOrder)}" + NewLine; }
 
             return content + "    end" + NewLine;
         }
@@ -42,6 +44,13 @@ namespace ElvantoSongbeamerIntegration.Model
             if (image.Type != ServiceItemType.Image || Type != ServiceItemType.Diashow) { return; }
 
             SubItems.Add(image);
+        }
+
+        public void AddVerseOrderForSongs(string verseOrder)
+        {
+            if (this.Type != ServiceItemType.Song) { return; }
+
+            VerseOrder = verseOrder;
         }
 
         public static ServiceItemType? GetItemTypeFromExtension(string extension)
@@ -170,12 +179,18 @@ namespace ElvantoSongbeamerIntegration.Model
         private string SplitStringIfOver64CharsAddSingleQuote(string filename)
         {
             var utf = SongSheetOpener.UmlautsUnicodeToUTF8(filename);
+            var part3 = "";
 
+            if (utf.Length > 128)
+            {
+                part3 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(128));
+            }
             if (utf.Length > 64)
             {
                 var part1 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(0, 64));
-                var part2 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(64));
-                return $"{NewLine}        '{part1}' +{NewLine}        '{part2}'";
+                var part2 = SongSheetOpener.UmlautsUTF8ToUnicode(utf.Substring(64, 128));
+
+                return $"{NewLine}        '{part1}' +{NewLine}        '{part2}'" + (part3 != "" ? $" +{NewLine}        '{part3}'" : "");
             }
             return $"'{filename}'";
         }
