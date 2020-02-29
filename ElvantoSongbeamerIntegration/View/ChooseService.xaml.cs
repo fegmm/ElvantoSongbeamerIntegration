@@ -56,6 +56,7 @@ namespace SongbeamerSongbookIntegrator.View
         private void buttonStart_Click(object sender, RoutedEventArgs e)
         {
             errorLabel.Foreground = new SolidColorBrush(Colors.Red);
+            errorLabel.Content = "";
 
             if (!datePicker.SelectedDate.HasValue) { errorLabel.Content = "Bitte Datum auswählen"; }
 
@@ -79,7 +80,7 @@ namespace SongbeamerSongbookIntegrator.View
 
             if (string.IsNullOrEmpty(Integrator.Errors)) 
             {
-                if (string.IsNullOrEmpty(Integrator.Warnings))
+                if (!string.IsNullOrEmpty(Integrator.Warnings))
                 {
                     errorLabel.Foreground = new SolidColorBrush(Colors.Yellow);
                     errorLabel.Content = Integrator.Warnings;
@@ -87,12 +88,20 @@ namespace SongbeamerSongbookIntegrator.View
                 else
                 {
                     errorLabel.Foreground = new SolidColorBrush(Colors.Green);
-                    errorLabel.Content = "Der Ablauf wurde erfolgreich erstellt";
+                    errorLabel.Content = "Der Ablauf wurde erfolgreich erstellt.";
                 }
             }
         }
+
         #endregion
 
-      
+        private void updateCCLI_Click(object sender, RoutedEventArgs e)
+        {
+            var songselectIntegrator = new SongselectIntegrator();
+            var result = songselectIntegrator.UpdateCCLIDictionary(true);
+
+            errorLabel.Foreground = new SolidColorBrush(result ? Colors.Green : Colors.Red);
+            errorLabel.Content = "CCLI-Datenbank " + (result ? "" : "nicht") + " erfolgreich aktualisiert.";
+        }
     }
 }
