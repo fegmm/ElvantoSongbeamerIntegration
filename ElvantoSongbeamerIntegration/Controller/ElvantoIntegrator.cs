@@ -100,18 +100,43 @@ namespace SongbeamerSongbookIntegrator.Controller
                 var isPrayer = item.title.Contains("Gebetsgemeinschaft");       // TODO auch "Gebet" zulassen?
                 var isReading = item.title.Contains("Textlesung");
                 var isLordsSupper = item.title.Contains("Abendmahl");
+                var isVortragslied = item.title.Contains("Vortragslied") || item.title.Contains("Vortragsstück");
 
                 if (isAnnouncement) { songsInput += "Ansagen" + ServiceItem.NewLine; }
                 else if (isSermon) { songsInput += "Predigt" + ServiceItem.NewLine; }
                 else if (isPrayer) { songsInput += "Gebetsanliegen" + ServiceItem.NewLine; }
                 else if (isReading) { songsInput += "Textlesung" + ServiceItem.NewLine; }
                 else if (isLordsSupper) { songsInput += "Abendmahl" + ServiceItem.NewLine; }
+                else if (isVortragslied && Settings.Instance.ADD_NOTE_FOR_VORTRAGSLIED) { songsInput += "Vortragslied" + ServiceItem.NewLine; }
                 else
                 {
                     // In Elvanto existierendes Lied
                     if (item.song != null && item.song != "") // Vergleich muss so sein (nicht in String umwandeln!)
                     {
-                        songsInput += ProcessSong((JObject)item.song);
+                        songsInput += GetCCLIOrTitleOfSong((JObject)item.song);
+                    }
+                    else if (item.title.Contains("Lied"))
+                    {
+                        // Lied-Information könnte entweder in der Beschreibung (Standard) oder vielleicht auch im Titel sein
+                        var note = item.description.Replace("<p>", "").Replace("</p>", "").Replace("\"", "");
+
+                        if (item.title.Substring("Lied".Length).Length > 3) 
+                        {
+                            // Titel könnte in Heading stehen
+                        }
+                        else if (!string.IsNullOrEmpty(note))
+                        {
+                            // Titel dürfte in Notizen stehen
+                            var hasBrackets = note.Contains("(");
+
+                            // Falls in Klammer keine Angabe zum Liederbuch ist, dann existiert Lied vermutlich in Songbeamer
+
+                        }
+                        else
+                        {
+                            // Keine Art des Auslesens bekannt oder Daten fehlen
+                            Warnings += $"Element '{item.title}' ('{note}') konnte nicht verarbeitet werden.";
+                        }
                     }
                 }
             }
@@ -137,7 +162,9 @@ namespace SongbeamerSongbookIntegrator.Controller
             return result;
         }
 
-        private string ProcessSong(JObject song)
+
+
+        private string GetCCLIOrTitleOfSong(JObject song)
         {
             var arrangement = ((JObject)song.GetValue("arrangement")).GetValue("title").ToString();
 

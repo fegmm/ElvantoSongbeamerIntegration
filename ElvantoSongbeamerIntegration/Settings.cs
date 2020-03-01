@@ -19,6 +19,7 @@
         public readonly string ALLOWED_MEDIA_EXTENSIONS = ".pdf|.jpg|.jpeg|.png|.wav|.mp3|.mp4|.mov|.avi|.wmv|.ppt|.pptx|.sng";
 
         public readonly bool ADD_KLIMAKAMMER_NOTES = true;  // Notiz am Anfang: Ob Klimakammer an ist und eine am Ende, ob sie aus ist anfügen?
+        public readonly bool ADD_NOTE_FOR_VORTRAGSLIED = true;  // Falls ein Vortragslied gesungen wird, dafür nur eine Notzi-Anzeigen (Text nicht nötig)?
 
         public string E21_SONGS_PATH;
         public string PRAYER_POINTS_PPT_PATH;

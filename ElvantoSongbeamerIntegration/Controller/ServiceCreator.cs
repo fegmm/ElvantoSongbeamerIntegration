@@ -387,6 +387,11 @@ namespace ElvantoSongbeamerIntegration.Controller
             ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Abendmahl ---"), null, ServiceItemType.Note));
         }
 
+        private void AddVortragslied()
+        {
+            ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode("--- Vortragslied ---"), null, ServiceItemType.Note));
+        }
+
         private void AddTextlesung(ServiceTemplateType type)
         {
             // Textlesung, Predigt und Gebetsanliegen
@@ -451,22 +456,11 @@ namespace ElvantoSongbeamerIntegration.Controller
                     ServiceItems.Add(new ServiceItem(SongSheetOpener.UmlautsUTF8ToUnicode(areAnnouncements ? "Ansagen:" : "--- Ansagen ---"), null, ServiceItemType.Note));
                     ServiceItems.AddRange(MediaItems);
                 }
-                else if (item == "Textlesung")
-                {
-                    AddTextlesung(type);
-                }
-                else if (item == "Gebetsanliegen")
-                {
-                    AddPrayerPoints();
-                }
-                else if (item == "Predigt")
-                {
-                    AddSermon();
-                }
-                else if (item == "Abendmahl")
-                {
-                    AddLordsSupper();
-                }
+                else if (item == "Textlesung")      { AddTextlesung(type); }
+                else if (item == "Vortragslied")    { AddVortragslied(); }
+                else if (item == "Gebetsanliegen")  { AddPrayerPoints(); }
+                else if (item == "Predigt")         { AddSermon(); }
+                else if (item == "Abendmahl")       { AddLordsSupper(); }
                 else
                 {
                     var itemType = ExtractSingleServiceItem(item, ServiceItem.NewLine.Length, false, false);
