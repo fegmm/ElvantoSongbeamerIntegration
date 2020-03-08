@@ -69,9 +69,9 @@ namespace SongbeamerSongbookIntegrator.Controller
             return new string(key);
         }
 
-        public async Task<bool> CreateScheduleForService(DateTime dateTime, ServiceTemplateType serviceType, bool openSongbeamer)
+        private async Task<Service> GetService(DateTime dateTime, ServiceTemplateType serviceType, bool onlyVolunteers)
         {
-            if (!IsInitialized || AllServicesResponse.services == null) { Errors = "Elvanto-Integrator ist noch nicht fertig initialisiert."; return false; }
+            if (!IsInitialized || AllServicesResponse.services == null) { Errors = "Elvanto-Integrator ist noch nicht fertig initialisiert."; return null; }
 
             // Datum in für Elvanto passendes Format (inkl. Zeitzone UTC0) konvertieren
             dateTime = dateTime.AddHours(-1);
@@ -79,13 +79,31 @@ namespace SongbeamerSongbookIntegrator.Controller
 
             // Passenden Gottesdienst suchen und Details in Elvanto abrufen (erst hier, um Zeit zu sparen)
             var singleService = AllServicesResponse.services.service.Where(x => x.date == dateIdString);
-            if (singleService.Count() == 0) { Errors = "Gottesdienst konnte nicht gefunden werden!"; return false; }
-            if (singleService.Count() > 1) { Errors = "Gottesdienst-Angaben waren nicht eindeutig: " + ServiceItem.NewLine + string.Join(",", singleService.Select(x => x.date)); return false; }
+            if (singleService.Count() == 0) { Errors = "Gottesdienst konnte nicht gefunden werden!"; return null; }
+            if (singleService.Count() > 1) { Errors = "Gottesdienst-Angaben waren nicht eindeutig: " + ServiceItem.NewLine + string.Join(",", singleService.Select(x => x.date)); return null; }
 
-            ServiceDetailsResponse = await ElvantoClient.ServiceGetDetailsAsync(singleService.First().id);
-            if (!ServiceDetailsResponse.status.Equals("ok")) { Errors = "Gottesdienst-Details konnten nicht richtig gefunden werden!"; return false; }
+            ServiceDetailsResponse = onlyVolunteers ? await ElvantoClient.ServiceGetVolunteersAsync(singleService.First().id) : await ElvantoClient.ServiceGetDetailsAsync(singleService.First().id);
+            if (!ServiceDetailsResponse.status.Equals("ok")) { Errors = "Gottesdienst-Details konnten nicht richtig gefunden werden!"; return null; }
             var service = ServiceDetailsResponse.service.First();
 
+            return service;
+        }
+
+        public async Task<bool> HasServiceBistro(DateTime dateTime, ServiceTemplateType serviceType)
+        {
+            // Es gibt nur Abends M12-Bistro
+            if (!IsInitialized || AllServicesResponse.services == null || serviceType != ServiceTemplateType.EveningService) { return false; }
+
+            var service = await GetService(dateTime, serviceType, true);
+            if (service == null) { return false; }
+
+            return service.volunteers.plan[0].positions.position.Where(x => x.position_name == "M12 Bistro Chef").FirstOrDefault()?.volunteers != null;
+        }
+
+        public async Task<bool> CreateScheduleForService(DateTime dateTime, ServiceTemplateType serviceType, bool openSongbeamer)
+        {
+            var service = await GetService(dateTime, serviceType, false);
+            if (service == null) { return false; }
 
             // Input für Ablaufplan-Creator erstellen
             var isBistro = service.volunteers.plan[0].positions.position.Where(x => x.position_name == "M12 Bistro Chef").FirstOrDefault()?.volunteers != null;
@@ -117,26 +135,7 @@ namespace SongbeamerSongbookIntegrator.Controller
                     }
                     else if (item.title.Contains("Lied"))
                     {
-                        // Lied-Information könnte entweder in der Beschreibung (Standard) oder vielleicht auch im Titel sein
-                        var note = item.description.Replace("<p>", "").Replace("</p>", "").Replace("\"", "");
-
-                        if (item.title.Substring("Lied".Length).Length > 3) 
-                        {
-                            // Titel könnte in Heading stehen
-                        }
-                        else if (!string.IsNullOrEmpty(note))
-                        {
-                            // Titel dürfte in Notizen stehen
-                            var hasBrackets = note.Contains("(");
-
-                            // Falls in Klammer keine Angabe zum Liederbuch ist, dann existiert Lied vermutlich in Songbeamer
-
-                        }
-                        else
-                        {
-                            // Keine Art des Auslesens bekannt oder Daten fehlen
-                            Warnings += $"Element '{item.title}' ('{note}') konnte nicht verarbeitet werden.";
-                        }
+                        songsInput += GetTitleOfNotConnectedSong(item);
                     }
                 }
             }
@@ -162,7 +161,33 @@ namespace SongbeamerSongbookIntegrator.Controller
             return result;
         }
 
+        private string GetTitleOfNotConnectedSong(Item item)
+        {
+            // Lied-Information könnte entweder in der Beschreibung (Standard) oder vielleicht auch im Titel sein
+            var note = item.description.Replace("<p>", "").Replace("</p>", "").Replace("\"", "");
 
+            if (item.title.Substring("Lied".Length).Length > 3)
+            {
+                // Titel könnte in Heading stehen
+            }
+            else if (!string.IsNullOrEmpty(note))
+            {
+                // Titel dürfte in Notizen stehen
+                var hasBrackets = note.Contains("(");
+
+                // Falls in Klammer keine Angabe zum Liederbuch ist, dann existiert Lied vermutlich in Songbeamer
+                if (!hasBrackets) { }
+                else { return item.title + ServiceItem.NewLine; }
+            }
+            else
+            {
+                // Keine Art des Auslesens bekannt oder Daten fehlen
+                Warnings += $"Element '{item.title}' ('{note}') konnte nicht verarbeitet werden.";
+            }
+
+            // TODO: Error
+            return "";
+        }
 
         private string GetCCLIOrTitleOfSong(JObject song)
         {

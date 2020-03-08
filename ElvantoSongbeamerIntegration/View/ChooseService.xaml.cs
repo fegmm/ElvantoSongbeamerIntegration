@@ -66,7 +66,6 @@ namespace SongbeamerSongbookIntegrator.View
 
             Integrator.IntegrationFinishedEvent += IntegrationFinished;
             Integrator.CreateScheduleForService(dateAndTime, serviceType, openSongbeamer).ConfigureAwait(false);
-            
         }
 
         private void changeToServiceCreator_Click(object sender, RoutedEventArgs e)
@@ -103,5 +102,25 @@ namespace SongbeamerSongbookIntegrator.View
             errorLabel.Foreground = new SolidColorBrush(result ? Colors.Green : Colors.Red);
             errorLabel.Content = "CCLI-Datenbank " + (result ? "" : "nicht") + " erfolgreich aktualisiert.";
         }
+
+        private void serviceListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (datePicker.SelectedDate == null) { return; }
+
+            var serviceType = (ServiceTemplateType)serviceListBox.SelectedIndex;
+            var dateAndTime = datePicker.SelectedDate.Value.AddHours(Services[((string)serviceListBox.SelectedItem)]);
+
+            CheckBistroAsync(dateAndTime, serviceType).ConfigureAwait(false);
+        }
+
+        public async Task<bool> CheckBistroAsync(DateTime dateTime, ServiceTemplateType serviceType)
+        {
+            var isBistro = await Integrator?.HasServiceBistro(dateTime, serviceType);
+            imageBistro.Visibility = isBistro ? Visibility.Visible : Visibility.Hidden;
+
+            return true;
+        }
+
+        private void datePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e) => serviceListBox_SelectionChanged(sender, e);
     }
 }
